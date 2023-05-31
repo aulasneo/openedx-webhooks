@@ -12,6 +12,8 @@ class Webhook(TimeStampedModel):
     TODO: Add either a negative or a positive PII annotation to the end of this docstring.  For more
     information, see OEP-30:
     https://open-edx-proposals.readthedocs.io/en/latest/oep-0030-arch-pii-markup-and-auditing.html
+
+    .. no_pii:
     """
 
     # TODO: add field definitions

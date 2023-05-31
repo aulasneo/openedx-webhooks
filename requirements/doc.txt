@@ -202,3 +202,4 @@ zipp==3.15.0
     # via
     #   importlib-metadata
     #   importlib-resources
+edx-sphinx-theme==3.1.0
