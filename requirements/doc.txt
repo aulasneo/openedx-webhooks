@@ -5,21 +5,33 @@
 #    make upgrade
 #
 alabaster==0.7.13
-    # via sphinx
+    # via
+    #   -r requirements/test.txt
+    #   sphinx
 asgiref==3.7.2
     # via
     #   -r requirements/test.txt
     #   django
+attrs==23.1.0
+    # via
+    #   -r requirements/test.txt
+    #   openedx-events
 babel==2.12.1
-    # via sphinx
+    # via
+    #   -r requirements/test.txt
+    #   sphinx
 bleach==6.0.0
     # via readme-renderer
 build==0.10.0
     # via -r requirements/doc.in
 certifi==2023.5.7
-    # via requests
+    # via
+    #   -r requirements/test.txt
+    #   requests
 charset-normalizer==3.1.0
-    # via requests
+    # via
+    #   -r requirements/test.txt
+    #   requests
 click==8.1.3
     # via
     #   -r requirements/test.txt
@@ -35,26 +47,43 @@ django==3.2.19
     #   -c https://raw.githubusercontent.com/edx/edx-lint/master/edx_lint/files/common_constraints.txt
     #   -r requirements/test.txt
     #   django-model-utils
+    #   openedx-events
 django-model-utils==4.3.1
     # via -r requirements/test.txt
 doc8==1.1.1
     # via -r requirements/doc.in
 docutils==0.19
     # via
+    #   -r requirements/test.txt
     #   doc8
     #   readme-renderer
     #   restructuredtext-lint
     #   sphinx
+edx-opaque-keys[django]==2.3.0
+    # via
+    #   -r requirements/test.txt
+    #   openedx-events
+edx-sphinx-theme==3.1.0
+    # via -r requirements/test.txt
 exceptiongroup==1.1.1
     # via
     #   -r requirements/test.txt
     #   pytest
+fastavro==1.7.4
+    # via
+    #   -r requirements/test.txt
+    #   openedx-events
 idna==3.4
-    # via requests
+    # via
+    #   -r requirements/test.txt
+    #   requests
 imagesize==1.4.1
-    # via sphinx
+    # via
+    #   -r requirements/test.txt
+    #   sphinx
 importlib-metadata==6.6.0
     # via
+    #   -r requirements/test.txt
     #   keyring
     #   sphinx
     #   twine
@@ -83,6 +112,8 @@ mdurl==0.1.2
     # via markdown-it-py
 more-itertools==9.1.0
     # via jaraco-classes
+openedx-events==8.0.1
+    # via -r requirements/test.txt
 packaging==23.1
     # via
     #   -r requirements/test.txt
@@ -101,10 +132,15 @@ pluggy==1.0.0
     #   pytest
 pygments==2.15.1
     # via
+    #   -r requirements/test.txt
     #   doc8
     #   readme-renderer
     #   rich
     #   sphinx
+pymongo==3.13.0
+    # via
+    #   -r requirements/test.txt
+    #   edx-opaque-keys
 pyproject-hooks==1.0.0
     # via build
 pytest==7.3.1
@@ -133,6 +169,7 @@ readme-renderer==37.3
     # via twine
 requests==2.31.0
     # via
+    #   -r requirements/test.txt
     #   requests-toolbelt
     #   sphinx
     #   twine
@@ -142,28 +179,47 @@ restructuredtext-lint==1.4.0
     # via doc8
 rfc3986==2.0.0
     # via twine
-rich==13.4.0
+rich==13.4.1
     # via twine
 six==1.16.0
-    # via bleach
+    # via
+    #   -r requirements/test.txt
+    #   bleach
+    #   edx-sphinx-theme
 snowballstemmer==2.2.0
-    # via sphinx
+    # via
+    #   -r requirements/test.txt
+    #   sphinx
 sphinx==5.3.0
     # via
     #   -c https://raw.githubusercontent.com/edx/edx-lint/master/edx_lint/files/common_constraints.txt
     #   -r requirements/doc.in
+    #   -r requirements/test.txt
+    #   edx-sphinx-theme
 sphinxcontrib-applehelp==1.0.4
-    # via sphinx
+    # via
+    #   -r requirements/test.txt
+    #   sphinx
 sphinxcontrib-devhelp==1.0.2
-    # via sphinx
+    # via
+    #   -r requirements/test.txt
+    #   sphinx
 sphinxcontrib-htmlhelp==2.0.1
-    # via sphinx
+    # via
+    #   -r requirements/test.txt
+    #   sphinx
 sphinxcontrib-jsmath==1.0.1
-    # via sphinx
+    # via
+    #   -r requirements/test.txt
+    #   sphinx
 sphinxcontrib-qthelp==1.0.3
-    # via sphinx
+    # via
+    #   -r requirements/test.txt
+    #   sphinx
 sphinxcontrib-serializinghtml==1.1.5
-    # via sphinx
+    # via
+    #   -r requirements/test.txt
+    #   sphinx
 sqlparse==0.4.4
     # via
     #   -r requirements/test.txt
@@ -173,6 +229,7 @@ stevedore==5.1.0
     #   -r requirements/test.txt
     #   code-annotations
     #   doc8
+    #   edx-opaque-keys
 text-unidecode==1.3
     # via
     #   -r requirements/test.txt
@@ -187,19 +244,20 @@ tomli==2.0.1
     #   pytest
 twine==4.0.2
     # via -r requirements/doc.in
-typing-extensions==4.6.2
+typing-extensions==4.6.3
     # via
     #   -r requirements/test.txt
     #   asgiref
     #   rich
 urllib3==2.0.2
     # via
+    #   -r requirements/test.txt
     #   requests
     #   twine
 webencodings==0.5.1
     # via bleach
 zipp==3.15.0
     # via
+    #   -r requirements/test.txt
     #   importlib-metadata
     #   importlib-resources
-edx-sphinx-theme==3.1.0
