@@ -9,4 +9,4 @@ date:           May-2023
 
 usage:          semantic version control for openedx-webhooks
 """
-__version__ = "0.1.0"
+__version__ = "0.1.1"

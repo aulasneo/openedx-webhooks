@@ -1,7 +1,7 @@
 Change Log
 ##########
 
-Unreleased
+Version 0.1.1 (2023-06-05)
 **********
 
 *
