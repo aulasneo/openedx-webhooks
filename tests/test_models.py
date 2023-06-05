@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Tests for the `webhooks` models module.
+Tests for the `openedx_webhooks` models module.
 """
 
 

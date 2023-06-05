@@ -1,7 +1,7 @@
 [run]
 branch = True
 data_file = .coverage
-source=webhooks
+source=openedx_webhooks
 omit =
     test_settings
     *migrations*

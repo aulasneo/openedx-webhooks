@@ -1,5 +1,5 @@
 """
-webhooks Django application initialization.
+openedx_webhooks Django application initialization.
 """
 import logging
 
@@ -27,7 +27,7 @@ class WebhooksConfig(AppConfig):
     Configuration for the webhooks Django application.
     """
 
-    name = 'webhooks'
+    name = 'openedx_webhooks'
 
     plugin_app = {
         # "settings_config": {

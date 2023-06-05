@@ -35,7 +35,7 @@ def get_version(*file_paths):
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(REPO_ROOT)
 
-VERSION = get_version('../webhooks', '__init__.py')
+VERSION = get_version('../openedx_webhooks', '__init__.py')
 
 # Configure Django for autodoc usage
 os.environ['DJANGO_SETTINGS_MODULE'] = 'test_settings'
@@ -89,10 +89,10 @@ source_suffix = '.rst'
 top_level_doc = 'index'
 
 # General information about the project.
-project = 'webhooks'
+project = 'openedx_webhooks'
 copyright = edx_theme.COPYRIGHT  # pylint: disable=redefined-builtin
 author = edx_theme.AUTHOR
-project_title = 'webhooks'
+project_title = 'openedx_webhooks'
 documentation_title = f"{project_title}"
 
 # The version info for the project you're documenting, acts as replacement for
@@ -183,7 +183,7 @@ html_theme_path = [edx_theme.get_html_theme_path()]
 # The name for this set of Sphinx documents.
 # "<project> v<release> documentation" by default.
 #
-# html_title = 'webhooks v0.1.0'
+# html_title = 'openedx_webhooks v0.1.0'
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 #
@@ -496,8 +496,8 @@ def on_init(app):  # pylint: disable=unused-argument
         # If we are, assemble the path manually
         bin_path = os.path.abspath(os.path.join(sys.prefix, 'bin'))
         apidoc_path = os.path.join(bin_path, apidoc_path)
-    check_call([apidoc_path, '-o', docs_path, os.path.join(root_path, 'webhooks'),
-                os.path.join(root_path, 'webhooks/migrations')])
+    check_call([apidoc_path, '-o', docs_path, os.path.join(root_path, 'openedx_webhooks'),
+                os.path.join(root_path, 'openedx_webhooks/migrations')])
 
 
 def setup(app):

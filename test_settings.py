@@ -32,14 +32,14 @@ INSTALLED_APPS = (
     'django.contrib.contenttypes',
     'django.contrib.messages',
     'django.contrib.sessions',
-    'webhooks',
+    'openedx_webhooks',
 )
 
 LOCALE_PATHS = [
-    root('webhooks', 'conf', 'locale'),
+    root('openedx_webhooks', 'conf', 'locale'),
 ]
 
-ROOT_URLCONF = 'webhooks.urls'
+ROOT_URLCONF = 'openedx_webhooks.urls'
 
 SECRET_KEY = 'insecure-secret-key'
 

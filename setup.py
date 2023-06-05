@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Package metadata for webhooks.
+Package metadata for openedx_webhooks.
 """
 import os
 import re
@@ -89,7 +89,7 @@ def is_requirement(line):
     return line and line.strip() and not line.startswith(("-r", "#", "-e", "git+", "-c"))
 
 
-VERSION = get_version('webhooks', '__init__.py')
+VERSION = get_version('openedx_webhooks', '__init__.py')
 
 if sys.argv[-1] == 'tag':
     print("Tagging the version on github:")
@@ -101,15 +101,15 @@ README = open(os.path.join(os.path.dirname(__file__), 'README.rst'), encoding="u
 CHANGELOG = open(os.path.join(os.path.dirname(__file__), 'CHANGELOG.rst'), encoding="utf8").read()
 
 setup(
-    name='webhooks',
+    name='openedx_webhooks',
     version=VERSION,
     description="""Webhooks for Open edX""",
     long_description=README + '\n\n' + CHANGELOG,
     author='edX',
     author_email='oscm@edx.org',
-    url='https://github.com/openedx/webhooks',
+    url='https://github.com/openedx/openedx-webhooks',
     packages=find_packages(
-        include=['webhooks', 'webhooks.*'],
+        include=['openedx_webhooks'],
         exclude=["*tests"],
     ),
 
@@ -131,7 +131,7 @@ setup(
     ],
     entry_points={
         "lms.djangoapp": [
-            "webhooks = webhooks.apps:WebhooksConfig",
+            "webhooks = openedx_webhooks.apps:WebhooksConfig",
         ],
     },
 
