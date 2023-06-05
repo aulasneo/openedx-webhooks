@@ -1,12 +1,5 @@
-webhooks
+Open edX Webhooks
 #############################
-
-.. note::
-
-  This README was auto-generated. Maintainer: please review its contents and
-  update all relevant sections. Instructions to you are marked with
-  "PLACEHOLDER" or "TODO". Update or remove those sections, and remove this
-  note when you are done.
 
 |pypi-badge| |ci-badge| |codecov-badge| |doc-badge| |pyversions-badge|
 |license-badge| |status-badge|
@@ -16,11 +9,8 @@ Purpose
 
 Webhooks for Open edX
 
-TODO: The ``README.rst`` file should start with a brief description of the repository and its purpose.
-It should be described in the context of other repositories under the ``openedx``
-organization. It should make clear where this fits in to the overall Open edX
-codebase and should be oriented towards people who are new to the Open edX
-project.
+This plugin implements a generic case of events handling that
+trigger a request to a configurable URL when a signal is received.
 
 Getting Started
 ***************
@@ -28,13 +18,20 @@ Getting Started
 Developing
 ==========
 
+More information about available signals can be found in the `events documentation`_
+and the `filters documentation`_
+
+.. _events documentation: https://github.com/openedx/edx-platform/blob/master/docs/guides/hooks/events.rst
+.. _filters documentation: https://github.com/openedx/edx-platform/blob/master/docs/guides/hooks/filters.rst
+
+
 One Time Setup
 --------------
 .. code-block::
 
   # Clone the repository
-  git clone git@github.com:openedx/webhooks.git
-  cd webhooks
+  git clone git@github.com:aulasneo/openedx-webhooks.git
+  cd openedx-webhooks
 
   # Set up a virtualenv with the same name as the repo and activate it
   # Here's how you might do that if you have virtualenvwrapper setup.
@@ -80,24 +77,34 @@ Every time you develop something in this repo
 Deploying
 =========
 
-TODO: How can a new user go about deploying this component? Is it just a few
-commands? Is there a larger how-to that should be linked here?
+To install this plugin into an Open edX installed by Tutor add this line
+to the `OPENEDX_EXTRA_PIP_REQUIREMENTS` list.
 
-PLACEHOLDER: For details on how to deploy this component, see the `deployment how-to`_
+.. code-block::
 
-.. _deployment how-to: https://docs.openedx.org/projects/webhooks/how-tos/how-to-deploy-this-component.html
+    - git+https://github.com/aulasneo/openedx-webhooks
+
+If it is an existing installation, you might need to run migrations to create
+the database table. For this, run:
+
+.. code-block::
+
+     tutor {dev|local|k8s} exec lms ./manage.py lms migrate
+
+Configuring
+===========
+
+A new section named `Webhooks` will be available in the LMS Django admin site.
+Add a new webhook to define the URLs that will be called after each event is
+received. More than one URL can be configured for each event. In this case,
+all URLs will be called.
 
 Getting Help
 ************
 
-Documentation
-=============
+If you need any help, send us an email to `info@aulasneo.com`_.
 
-PLACEHOLDER: Start by going through `the documentation`_.  If you need more help see below.
-
-.. _the documentation: https://docs.openedx.org/projects/webhooks
-
-(TODO: `Set up documentation <https://openedx.atlassian.net/wiki/spaces/DOC/pages/21627535/Publish+Documentation+on+Read+the+Docs>`_)
+.. _info@aulasneo.com: mailto:info@aulasneo.com
 
 More Help
 =========
@@ -113,7 +120,7 @@ For anything non-trivial, the best path is to open an issue in this
 repository with as many details about the issue you are facing as you
 can provide.
 
-https://github.com/openedx/webhooks/issues
+https://github.com/aulasneo/openedx-webhooks/issues
 
 For more information about these options, see the `Getting Help`_ page.
 
@@ -187,7 +194,6 @@ Please do not report security issues in public. Please email security@tcril.org.
     :target: https://github.com/openedx/webhooks/blob/main/LICENSE.txt
     :alt: License
 
-.. TODO: Choose one of the statuses below and remove the other status-badge lines.
 .. |status-badge| image:: https://img.shields.io/badge/Status-Experimental-yellow
 .. .. |status-badge| image:: https://img.shields.io/badge/Status-Maintained-brightgreen
 .. .. |status-badge| image:: https://img.shields.io/badge/Status-Deprecated-orange
