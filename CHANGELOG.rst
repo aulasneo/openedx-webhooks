@@ -1,7 +1,7 @@
 Change Log
 ##########
 
-Unreleased
+Version 0.2.1 (2023-06-06)
 **********************************************
 
 * Renamed package to openedx_webhooks. Upload to PyPI.
