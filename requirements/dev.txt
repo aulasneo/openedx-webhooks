@@ -79,6 +79,7 @@ django==3.2.19
     #   -r requirements/quality.txt
     #   django-model-utils
     #   edx-i18n-tools
+    #   openedx-filters
 django-model-utils==4.3.1
     # via -r requirements/quality.txt
 docutils==0.19
@@ -141,6 +142,8 @@ mccabe==0.7.0
     # via
     #   -r requirements/quality.txt
     #   pylint
+openedx-filters==1.3.0
+    # via -r requirements/quality.txt
 packaging==23.1
     # via
     #   -r requirements/ci.txt
