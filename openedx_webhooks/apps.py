@@ -30,12 +30,12 @@ class WebhooksConfig(AppConfig):
     name = 'openedx_webhooks'
 
     plugin_app = {
-        # "settings_config": {
-        #     "lms.djangoapp": {
-        #         "common": {"relative_path": "settings.common"},
-        #         "test": {"relative_path": "settings.test"},
-        #     },
-        # },
+        "settings_config": {
+            "lms.djangoapp": {
+                "common": {"relative_path": "settings.common"},
+                "test": {"relative_path": "settings.test"},
+            },
+        },
         "signals_config": {
             "lms.djangoapp": {
                 "relative_path": "receivers",
