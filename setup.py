@@ -109,7 +109,6 @@ setup(
     author_email='oscm@edx.org',
     url='https://github.com/openedx/openedx-webhooks',
     packages=find_packages(
-        include=['openedx_webhooks'],
         exclude=["*tests"],
     ),
 
