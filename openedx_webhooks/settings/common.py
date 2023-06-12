@@ -14,7 +14,13 @@ def plugin_settings(settings):
         "org.openedx.learning.student.login.requested.v1": {
             "fail_silently": False,
             "pipeline": [
-                "openedx_webhooks.filters.StudentLoginRequested"
+                "openedx_webhooks.filters.StudentLoginRequestedWebFilter"
             ]
-        }
+        },
+        "org.openedx.learning.student.registration.requested.v1": {
+            "fail_silently": False,
+            "pipeline": [
+                "openedx_webhooks.filters.StudentRegistrationRequestedWebFilter"
+            ]
+        },
     }

@@ -1,9 +1,33 @@
 """
 Utilities used by Open edX Events Receivers.
 """
+import logging
 from collections.abc import MutableMapping
 
+import requests
 from opaque_keys.edx.locator import CourseLocator
+
+logger = logging.getLogger(__name__)
+
+
+def send(url, payload):
+    """
+    Dispatch the payload to the webhook url, return the response and catch exceptions.
+    """
+    try:
+        headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        r = requests.post(url, data=payload, headers=headers, timeout=10)
+        r.raise_for_status()
+    except requests.ConnectionError as e:
+        logger.error(f"Connection error {str(e)} calling webhook {url}")
+    except requests.Timeout:
+        logger.error(f"Timeout calling webhook {url}")
+    except requests.exceptions.HTTPError as e:
+        logger.error(f"HTTP error {str(e)} calling webhook {url}")
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Request error {str(e)} calling webhook {url}")
+
+    return r
 
 
 def flatten_dict(dictionary, parent_key="", sep="_"):

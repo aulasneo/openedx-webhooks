@@ -27,6 +27,22 @@ signals = [
     # "PERSISTENT_GRADE_SUMMARY_CHANGED",
 ]
 
+# From https://github.com/openedx/edx-platform/blob/master/docs/guides/hooks/filters.rst#index-of-filters
+filters = [
+    "org.openedx.learning.student.registration.requested.v1",
+    "org.openedx.learning.student.login.requested.v1",
+    "org.openedx.learning.course.enrollment.started.v1",
+    "org.openedx.learning.course.unenrollment.started.v1",
+    "org.openedx.learning.certificate.creation.requested.v1",
+    "org.openedx.learning.certificate.render.started.v1",
+    "org.openedx.learning.cohort.change.requested.v1",
+    "org.openedx.learning.cohort.assignment.requested.v1",
+    "org.openedx.learning.course_about.render.started.v1",
+    "org.openedx.learning.dashboard.render.started.v1",
+    "org.openedx.learning.veritical_block_child.render.started.v1",
+    "org.openedx.learning.veritical_block.render.completed.v1",
+]
+
 
 class Webhook(TimeStampedModel):
     """
@@ -59,7 +75,7 @@ class Webhook(TimeStampedModel):
 
     enabled = models.BooleanField(
         default=True,
-        verbose_name="Enabled"
+        verbose_name=_("Enabled")
     )
 
     def __str__(self):
@@ -67,3 +83,98 @@ class Webhook(TimeStampedModel):
         Get a string representation of this model instance.
         """
         return f'Webhook for {self.event} to {self.webhook_url}'
+
+
+class Webfilter(TimeStampedModel):
+    """
+    Configuration model to set the filter url for each event.
+
+    .. no_pii:
+    """
+
+    filter_list = (
+        (''.join(list(map(str.capitalize, filter.split('.')[3:-1]))),
+         ' '.join(list(map(str.capitalize, filter.split('.')[3:-1]))),)
+        for filter in filters
+    )
+
+    description = models.TextField(
+        help_text="Description",
+        blank=True,
+        default='',
+    )
+
+    event = models.CharField(
+        max_length=50,
+        blank=False,
+        primary_key=False,
+        choices=filter_list,
+        default='',
+        unique=False,
+        help_text=_("Event type"),
+    )
+
+    webhook_url = models.URLField(
+        max_length=255,
+        blank=False,
+        help_text=_("URL to call when the event is triggered")
+    )
+
+    enabled = models.BooleanField(
+        default=True,
+        verbose_name=_("Enabled")
+    )
+
+    disable_filtering = models.BooleanField(
+        default=False,
+        verbose_name=_("Disable Filtering"),
+        help_text=_("Do not update the data with the response of the webhook call.")
+    )
+
+    disable_halt = models.BooleanField(
+        default=False,
+        verbose_name=_("Disable halting"),
+        help_text=_("Don't stop the process even if the response includes exception data.")
+    )
+
+    halt_on_4xx = models.BooleanField(
+        default=False,
+        verbose_name=_("Halt on 4xx"),
+        help_text=_("Halt the process if the server returns a status response of 4xx (client error).")
+    )
+
+    redirect_on_4xx = models.URLField(
+        max_length=255,
+        blank=True,
+        help_text=_("URL to redirect on result code 4xx (client error)")
+    )
+
+    halt_on_5xx = models.BooleanField(
+        default=False,
+        verbose_name=_("Halt on 5xx"),
+        help_text=_("Halt the process if the server returns a status response of 5xx (server error).")
+    )
+
+    redirect_on_5xx = models.URLField(
+        max_length=255,
+        blank=True,
+        help_text=_("URL to redirect on result code 5XX (server error)")
+    )
+
+    halt_on_request_exception = models.BooleanField(
+        default=False,
+        verbose_name=_("Halt on request exception"),
+        help_text=_("Halt the process if the server doesn't response or there is an exception sending the request.")
+    )
+
+    redirect_on_request_exception = models.URLField(
+        max_length=255,
+        blank=True,
+        help_text=_("URL to redirect on request exception")
+    )
+
+    def __str__(self):
+        """
+        Get a string representation of this model instance.
+        """
+        return f'Webhook filter for {self.event} to {self.webhook_url}'

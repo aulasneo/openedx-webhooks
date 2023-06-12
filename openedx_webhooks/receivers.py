@@ -3,30 +3,12 @@ Open edX signal events handler functions.
 """
 import logging
 
-import requests
 from attrs import asdict
 
 from .models import Webhook
-from .utils import flatten_dict, serialize_course_key
+from .utils import flatten_dict, send, serialize_course_key
 
 logger = logging.getLogger(__name__)
-
-
-def _send(url, payload):
-    """
-    Dispatch the payload to the webhook url and catch exceptions.
-    """
-    try:
-        r = requests.post(url, payload, timeout=10)
-        r.raise_for_status()
-    except requests.ConnectionError as e:
-        logger.error(f"Connection error {str(e)} calling webhook {url}")
-    except requests.Timeout:
-        logger.error(f"Timeout calling webhook {url}")
-    except requests.exceptions.HTTPError as e:
-        logger.error(f"HTTP error {str(e)} calling webhook {url}")
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Request error {str(e)} calling webhook {url}")
 
 
 def _process_event(event_name, data_type, data, **kwargs):
@@ -44,7 +26,7 @@ def _process_event(event_name, data_type, data, **kwargs):
             'event_metadata': asdict(kwargs.get("metadata")),
         }
 
-        _send(webhook.webhook_url, flatten_dict(payload))
+        send(webhook.webhook_url, flatten_dict(payload))
 
 
 def session_login_completed_receiver(user, **kwargs):
