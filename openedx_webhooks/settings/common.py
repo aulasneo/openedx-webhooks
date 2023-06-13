@@ -23,4 +23,10 @@ def plugin_settings(settings):
                 "openedx_webhooks.filters.StudentRegistrationRequestedWebFilter"
             ]
         },
+        "org.openedx.learning.course.enrollment.started.v1": {
+            "fail_silently": False,
+            "pipeline": [
+                "openedx_webhooks.filters.CourseEnrollmentStartedWebFilter"
+            ]
+        },
     }

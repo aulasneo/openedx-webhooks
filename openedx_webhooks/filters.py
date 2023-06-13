@@ -20,8 +20,13 @@ from datetime import datetime
 
 import requests.exceptions
 from common.djangoapps.student.models import UserProfile  # pylint: disable=import-error
+from opaque_keys.edx.keys import CourseKey
 from openedx_filters import PipelineStep
-from openedx_filters.learning.filters import StudentLoginRequested, StudentRegistrationRequested
+from openedx_filters.learning.filters import (
+    CourseEnrollmentStarted,
+    StudentLoginRequested,
+    StudentRegistrationRequested,
+)
 
 from .models import Webfilter
 from .utils import send
@@ -275,10 +280,8 @@ class StudentLoginRequestedWebFilter(PipelineStep):
                                                   },
                                                   exception=StudentLoginRequested.PreventLogin)
 
-            if 'user' in content:
-                update_model(user, content.get('user'))
-            if 'profile' in content:
-                update_model(user.profile, content.get('profile'))
+            update_model(user, content.get('user'))
+            update_model(user.profile, content.get('profile'))
         else:
             content, exceptions = _process_filter(event_name=event,
                                                   data={},
@@ -295,7 +298,7 @@ class StudentRegistrationRequestedWebFilter(PipelineStep):
 
     This filter is triggered when a new user submits the registration form.
 
-    I will POST a json to the webhook url with the user and profile information.
+    It will POST a json to the webhook url with the user and profile information.
 
     EXAMPLE::
 
@@ -406,3 +409,103 @@ class StudentRegistrationRequestedWebFilter(PipelineStep):
         updated_form_data = update_query_dict(form_data, form_data_response)
 
         return {"form_data": updated_form_data}
+
+
+class CourseEnrollmentStartedWebFilter(PipelineStep):
+    """
+    Process CourseEnrollmentStarted filter.
+
+    This filter is triggered when a user is enrolled in a course.
+
+    It will POST a json to the webhook url with ...
+
+    EXAMPLE::
+
+        {
+        }
+
+    The webhook processor can return a json with ...
+
+    EXAMPLE::
+
+        {
+            "data": {
+                "form_data": {
+                    <key>:<value>,...
+                },
+            },
+            "exception": {
+                "PreventRegistration": {
+                    "message":<message>,
+                    "redirect_to": <redirect URL>,
+                    "error_code": <error code>,
+                    "context": {
+                        <context key>: <context value>,...
+                    }
+                }
+            }
+        }
+
+    "user" and "profile" keys are optionals, as well as the keys inside each.
+
+    "PreventEnrollment" can be a json as in the example or a string value with the message text,
+    leaving the other keys empty.
+
+    EXAMPLE::
+
+        ...
+        "exception": {
+            "PreventEnrollment": <message>
+        }
+        ...
+
+    PreventEnrollment accepts a message.
+
+    """
+
+    def run_filter(self, user, course_key, mode):  # pylint: disable=arguments-differ
+        """
+        Execute a filter with the signature specified.
+
+        Arguments:
+            user (User): is a Django User object.
+            course_key (CourseKey): course key associated with the enrollment.
+            mode (str): is a string specifying what kind of enrollment.
+        """
+        event = "CourseEnrollmentStarted"
+        logger.info(f"Webfilter for {event} event. User: {user}, course: {course_key}, mode: {mode}.")
+
+        user_dict = user.__dict__.copy()
+        user_dict.pop('_state', None)
+
+        user_profile_dict = user.profile.__dict__.copy()
+        user_profile_dict.pop('_state', None)
+
+        logger.warning(type(course_key))
+
+        data = {
+            'user': user_dict,
+            'profile': user_profile_dict,
+            'course_key': course_key,
+            'mode': mode,
+        }
+        content, exceptions = _process_filter(event_name=event,
+                                              data=data,
+                                              exception=StudentRegistrationRequested.PreventRegistration)
+
+        _check_for_exception(exceptions, CourseEnrollmentStarted.PreventEnrollment)
+
+        update_model(user, content.get('user'))
+        update_model(user.profile, content.get('profile'))
+
+        if 'course_key' in content:
+            course_key = CourseKey.from_string(content.get('course_key'))
+
+        if 'mode' in content:
+            mode = content.get('mode')
+
+        return {
+            "user": user,
+            "course_key": course_key,
+            "mode": mode,
+        }
