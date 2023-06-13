@@ -43,8 +43,15 @@ def _process_filter(event_name, data, exception):
         logger.info(f"{event_name} webhook filter triggered to {webfilter.webhook_url}")
 
         try:
-            # pylint: disable=unnecessary-lambda
-            response = send(webfilter.webhook_url, json.dumps(data, default=lambda o: str(o)))
+            payload = data.copy()
+            payload['event_metadata'] = {
+                'event_type': event_name,
+                'time': str(datetime.now())
+            }
+
+            # Send the request to the webhook URL
+            response = send(webfilter.webhook_url, payload)
+
         except requests.exceptions.RequestException as e:
             if webfilter.halt_on_request_exception:
                 logger.info(f"Halting on request exception '{e.strerror}'. "

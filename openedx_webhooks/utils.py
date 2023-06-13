@@ -1,6 +1,7 @@
 """
 Utilities used by Open edX Events Receivers.
 """
+import json
 import logging
 from collections.abc import MutableMapping
 
@@ -10,13 +11,20 @@ from opaque_keys.edx.locator import CourseLocator
 logger = logging.getLogger(__name__)
 
 
-def send(url, payload):
+def send(url, payload, www_form_urlencoded: bool = False):
     """
     Dispatch the payload to the webhook url, return the response and catch exceptions.
     """
     try:
-        headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
-        r = requests.post(url, data=payload, headers=headers, timeout=10)
+        if www_form_urlencoded:
+            headers = {'Content-type': 'application/x-www-form-urlencoded', 'Accept': 'text/plain'}
+            payload = flatten_dict(payload)
+        else:
+            headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+
+        # pylint: disable=unnecessary-lambda
+        r = requests.post(url, data=json.dumps(payload, default=lambda o: str(o)), headers=headers, timeout=10)
+
         r.raise_for_status()
     except requests.ConnectionError as e:
         logger.error(f"Connection error {str(e)} calling webhook {url}")

@@ -6,7 +6,7 @@ import logging
 from attrs import asdict
 
 from .models import Webhook
-from .utils import flatten_dict, send, serialize_course_key
+from .utils import send, serialize_course_key
 
 logger = logging.getLogger(__name__)
 
@@ -25,8 +25,8 @@ def _process_event(event_name, data_type, data, **kwargs):
             data_type: asdict(data, value_serializer=serialize_course_key),
             'event_metadata': asdict(kwargs.get("metadata")),
         }
-
-        send(webhook.webhook_url, flatten_dict(payload))
+        logger.warning(payload)
+        send(webhook.webhook_url, payload, www_form_urlencoded=False)
 
 
 def session_login_completed_receiver(user, **kwargs):

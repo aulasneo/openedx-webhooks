@@ -78,6 +78,12 @@ class Webhook(TimeStampedModel):
         verbose_name=_("Enabled")
     )
 
+    use_www_form_encoding = models.BooleanField(
+        default=False,
+        verbose_name=_("Use WWW form encoding"),
+        help_text=_("When enabled, data will be sent in form format, instead of JSON")
+    )
+
     def __str__(self):
         """
         Get a string representation of this model instance.
@@ -171,6 +177,12 @@ class Webfilter(TimeStampedModel):
         max_length=255,
         blank=True,
         help_text=_("URL to redirect on request exception")
+    )
+
+    use_www_form_encoding = models.BooleanField(
+        default=False,
+        verbose_name=_("Use WWW form encoding"),
+        help_text=_("When enabled, data will be sent in form format, instead of JSON")
     )
 
     def __str__(self):
