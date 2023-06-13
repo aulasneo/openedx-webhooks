@@ -422,34 +422,63 @@ class CourseEnrollmentStartedWebFilter(PipelineStep):
     EXAMPLE::
 
         {
+          "user": {
+            "id": 4,
+            "password": "pbkdf2_sha256$260000$W2SQQzln5u3i20SYeShEWx$4Y/Th225xS25wvWG1GyHpRAj2f3Ick4/a4jbAFvsudY=",
+            "last_login": "2023-06-13 15:04:10.629206+00:00",
+            "is_superuser": true,
+            "username": "andres",
+            "first_name": "",
+            "last_name": "",
+            "email": "andres@aulasneo.com",
+            "is_staff": true,
+            "is_active": true,
+            "date_joined": "2023-01-26 16:22:57.939766+00:00"
+          },
+          "profile": {
+            "id": 2,
+            "user_id": 4,
+            "name": "Andrés González",
+            "meta": "",
+            "courseware": "course.xml",
+            "language": "",
+            "location": "",
+            "year_of_birth": null,
+            "gender": null,
+            "level_of_education": null,
+            "mailing_address": null,
+            "city": null,
+            "country": null,
+            "state": null,
+            "goals": null,
+            "bio": null,
+            "profile_image_uploaded_at": null,
+            "phone_number": null
+          },
+          "course_key": "course-v1:test+test+test",
+          "mode": "honor",
+          "event_metadata": {
+            "event_type": "CourseEnrollmentStarted",
+            "time": "2023-06-13 20:59:26.093379"
+          }
         }
 
-    The webhook processor can return a json with ...
+    The webhook processor can return a json with any data to modify.
 
     EXAMPLE::
 
         {
             "data": {
-                "form_data": {
-                    <key>:<value>,...
-                },
+                "mode": "audit"
             },
             "exception": {
-                "PreventRegistration": {
-                    "message":<message>,
-                    "redirect_to": <redirect URL>,
-                    "error_code": <error code>,
-                    "context": {
-                        <context key>: <context value>,...
-                    }
-                }
+                "PreventEnrollment": "Enrollment not allowed"
             }
         }
 
-    "user" and "profile" keys are optionals, as well as the keys inside each.
+    All keys are optional, as well as the keys inside each.
 
-    "PreventEnrollment" can be a json as in the example or a string value with the message text,
-    leaving the other keys empty.
+    "PreventEnrollment" can have a message to be logged.
 
     EXAMPLE::
 
@@ -509,3 +538,4 @@ class CourseEnrollmentStartedWebFilter(PipelineStep):
             "course_key": course_key,
             "mode": mode,
         }
+
