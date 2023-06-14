@@ -35,4 +35,10 @@ def plugin_settings(settings):
                 "openedx_webhooks.filters.CourseUnenrollmentStartedWebFilter"
             ]
         },
+        "org.openedx.learning.certificate.creation.requested.v1": {
+            "fail_silently": False,
+            "pipeline": [
+                "openedx_webhooks.filters.CertificateCreationRequestedWebFilter"
+            ]
+        },
     }

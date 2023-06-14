@@ -2,7 +2,6 @@
 Handlers for Open edX filters.
 
 Signals:
-AccountSettingsRenderStarted,
 CertificateCreationRequested,
 CertificateRenderStarted,
 CohortAssignmentRequested,
@@ -20,9 +19,11 @@ from datetime import datetime
 
 import requests.exceptions
 from common.djangoapps.student.models import UserProfile  # pylint: disable=import-error
+from django.db import models
 from opaque_keys.edx.keys import CourseKey
 from openedx_filters import PipelineStep
 from openedx_filters.learning.filters import (
+    CertificateCreationRequested,
     CourseEnrollmentStarted,
     CourseUnenrollmentStarted,
     StudentLoginRequested,
@@ -45,16 +46,25 @@ def _process_filter(event_name, data, exception):
     response_data = {}
     response_exceptions = {}
 
+    # Convert model objects to dicts, and remove '_state'
+    payload = {}
+    for key, value in data.items():
+        if isinstance(value, models.Model):
+            payload[key] = value.__dict__.copy()
+            payload[key].pop('_state', None)
+        else:
+            payload[key] = value
+
+    # Add event metadata
+    payload['event_metadata'] = {
+        'event_type': event_name,
+        'time': str(datetime.now())
+    }
+
     for webfilter in webfilters:
         logger.info(f"{event_name} webhook filter triggered to {webfilter.webhook_url}")
 
         try:
-            payload = data.copy()
-            payload['event_metadata'] = {
-                'event_type': event_name,
-                'time': str(datetime.now())
-            }
-
             # Send the request to the webhook URL
             response = send(webfilter.webhook_url, payload)
 
@@ -157,6 +167,22 @@ def update_query_dict(query_dict, data):
                 result[key] = value
 
     return result
+
+
+def update_object(o, data):
+    """
+    Update a generic object with dict with data.
+
+    """
+    if isinstance(data, dict):
+        for key, value in data.items():
+            if isinstance(getattr(o, key), datetime):
+                # Handle date time data
+                setattr(o, key, datetime.fromisoformat(value))
+            elif isinstance(getattr(o, key), bool):
+                setattr(o, key, value.lower() == 'true')
+            else:
+                setattr(o, key, value)
 
 
 def _check_for_exception(exceptions, exception_class):
@@ -268,16 +294,10 @@ class StudentLoginRequestedWebFilter(PipelineStep):
 
         if user:
             # If the log in attempt is unsuccessfull, the user object will be None
-            user_dict = user.__dict__.copy()
-            user_profile_dict = user.profile.__dict__.copy()
-
-            user_dict.pop('_state', None)
-            user_profile_dict.pop('_state', None)
-
             content, exceptions = _process_filter(event_name=event,
                                                   data={
-                                                      "user": user_dict,
-                                                      "profile": user_profile_dict,
+                                                      "user": user,
+                                                      "profile": user.profile,
                                                   },
                                                   exception=StudentLoginRequested.PreventLogin)
 
@@ -505,21 +525,15 @@ class CourseEnrollmentStartedWebFilter(PipelineStep):
         event = "CourseEnrollmentStarted"
         logger.info(f"Webfilter for {event} event. User: {user}, course: {course_key}, mode: {mode}.")
 
-        user_dict = user.__dict__.copy()
-        user_dict.pop('_state', None)
-
-        user_profile_dict = user.profile.__dict__.copy()
-        user_profile_dict.pop('_state', None)
-
         data = {
-            'user': user_dict,
-            'profile': user_profile_dict,
+            'user': user,
+            'profile': user.profile,
             'course_key': course_key,
             'mode': mode,
         }
         content, exceptions = _process_filter(event_name=event,
                                               data=data,
-                                              exception=StudentRegistrationRequested.PreventRegistration)
+                                              exception=CourseEnrollmentStarted.PreventEnrollment)
 
         update_model(user, content.get('user'))
         update_model(user.profile, content.get('profile'))
@@ -550,6 +564,45 @@ class CourseUnenrollmentStartedWebFilter(PipelineStep):
     EXAMPLE::
 
         {
+          "user": {
+            "id": 4,
+            "password": "pbkdf2_sha256$260000$W2SQQzln5u3i20SYeShEWx$4Y/Th225xS25wvWG1GyHpRAj2f3Ick4/a4jbAFvsudY=",
+            "last_login": "2023-06-13 15:04:10.629206+00:00",
+            "is_superuser": true,
+            "username": "andres",
+            "first_name": "hola",
+            "last_name": "",
+            "email": "andres@aulasneo.com",
+            "is_staff": true,
+            "is_active": true,
+            "date_joined": "2023-01-26 16:22:57.939766+00:00"
+          },
+          "profile": {
+            "id": 2,
+            "user_id": 4,
+            "name": "Andrés González",
+            "meta": "",
+            "courseware": "course.xml",
+            "language": "",
+            "location": "",
+            "year_of_birth": null,
+            "gender": null,
+            "level_of_education": null,
+            "mailing_address": null,
+            "city": null,
+            "country": null,
+            "state": null,
+            "goals": null,
+            "bio": null,
+            "profile_image_uploaded_at": null,
+            "phone_number": null
+          },
+          "course_key": "course-v1:test+test+test",
+          "mode": "honor",
+          "event_metadata": {
+            "event_type": "CourseEnrollmentStarted",
+            "time": "2023-06-13 21:02:50.375064"
+          }
         }
 
     The webhook processor can return a json with two objects: data and exception.
@@ -585,20 +638,15 @@ class CourseUnenrollmentStartedWebFilter(PipelineStep):
         logger.info(f"Webfilter for {event} event. Enrollment: {enrollment}")
 
         user = enrollment.user
-        user_dict = user.__dict__.copy()
-        user_dict.pop('_state', None)
-
-        user_profile_dict = user.profile.__dict__.copy()
-        user_profile_dict.pop('_state', None)
 
         data = {
-            'user': user_dict,
-            'profile': user_profile_dict,
+            'user': user,
+            'profile': user.profile,
             'enrollment': enrollment,
         }
         content, exceptions = _process_filter(event_name=event,
                                               data=data,
-                                              exception=StudentRegistrationRequested.PreventRegistration)
+                                              exception=CourseUnenrollmentStarted.PreventUnenrollment)
 
         update_model(user, content.get('user'))
         update_model(user.profile, content.get('profile'))
@@ -607,4 +655,156 @@ class CourseUnenrollmentStartedWebFilter(PipelineStep):
 
         return {
             "enrollment": enrollment,
+        }
+
+
+class CertificateCreationRequestedWebFilter(PipelineStep):
+    """
+    Process CertificateCreationRequested filter.
+
+    This filter is triggered when a certificate creation is requested.
+
+    It will POST a json to the webhook url with the enrollment object.
+
+    EXAMPLE::
+
+        {
+          "user": {
+            "id": 17,
+            "password": "pbkdf2_sha256$260000$ybxHo0UuhL7dJKFFqSUBIz$j3BMW1/Ubt3E0kB324l+JNT2pYcWeBgUGctDsHTSYbE=",
+            "last_login": "2023-06-14 16:11:08.341205+00:00",
+            "is_superuser": false,
+            "username": "test1",
+            "first_name": "",
+            "last_name": "",
+            "email": "test1@aulasneo.com",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2023-06-12 20:29:37.756206+00:00"
+          },
+          "profile": {
+            "id": 13,
+            "user_id": 17,
+            "name": "test1",
+            "meta": "",
+            "courseware": "course.xml",
+            "language": "",
+            "location": "",
+            "year_of_birth": null,
+            "gender": "",
+            "level_of_education": "",
+            "mailing_address": "",
+            "city": "",
+            "country": "",
+            "state": null,
+            "goals": "",
+            "bio": null,
+            "profile_image_uploaded_at": null,
+            "phone_number": null
+          },
+          "course_key": "course-v1:test+test+test",
+          "mode": "honor",
+          "status": null,
+          "grade": {
+            "user": "test1",
+            "course_data": "Course: course_key: course-v1:test+test+test",
+            "percent": 1,
+            "passed": true,
+            "letter_grade": "Pass",
+            "force_update_subsections": false,
+            "_subsection_grade_factory": "<lms.djangoapps.grades.subsection_grade_factory.SubsectionGradeFactory object at 0x7fb70a728310>"
+          },
+          "generation_mode": "self",
+          "event_metadata": {
+            "event_type": "CertificateCreationRequested",
+            "time": "2023-06-14 16:28:23.266529"
+          }
+        }
+
+    The webhook processor can return a json with two objects: data and exception.
+
+    EXAMPLE::
+
+        {
+            "data": {
+                "user": {
+                    <key>:<value>,...
+                },
+                "profile": {
+                    <key>:<value>,...
+                },
+                "course_key": <course key>,
+                "mode": <mode>,
+                "status": <status>,
+                "grade": {
+                    "percent": <0..1>,
+                    "passed": <true|false>,
+                    "letter_grade": <letter grade>,
+                    "force_update_subsections": <true|false>
+            },
+            "exception": {
+                "PreventCertificateCreation": <message>
+                }
+            }
+        }
+
+    All data keys are optionals, as well as the keys inside each.
+    """
+
+    def run_filter(self, user, course_key, mode, status, grade, generation_mode):  # pylint: disable=arguments-differ
+        """
+        Execute a filter with the signature specified.
+
+        Arguments:
+            user (User): is a Django User object.
+            course_key (CourseKey): course key associated with the certificate.
+            mode (str): mode of the certificate.
+            status (str): status of the certificate.
+            grade (CourseGrade): user's grade in this course run.
+            generation_mode (str): Options are "self" (implying the user generated the cert themself) and "batch"
+                for everything else.
+        """
+        event = "CertificateCreationRequested"
+        logger.info(f"Webfilter for {event} event. User: {user}, course: {course_key}, status: {status}")
+
+        data = {
+            "user": user,
+            "profile": user.profile,
+            "course_key": course_key,
+            "mode": mode,
+            "status": status,
+            "grade": grade.__dict__,
+            "generation_mode": generation_mode,
+        }
+
+        content, exceptions = _process_filter(event_name=event,
+                                              data=data,
+                                              exception=CertificateCreationRequested.PreventCertificateCreation)
+
+        update_model(user, content.get('user'))
+        update_model(user.profile, content.get('profile'))
+
+        if 'course_key' in content:
+            course_key = CourseKey.from_string(content.get('course_key'))
+
+        if 'mode' in content:
+            mode = content.get('mode')
+
+        if 'status' in content:
+            status = content.get('status')
+
+        if 'generation_mode' in content:
+            generation_mode = content.get('generation_mode')
+
+        update_object(grade, content.get('grade'))
+
+        _check_for_exception(exceptions, CertificateCreationRequested.PreventCertificateCreation)
+
+        return {
+            "user": user,
+            "course_key": course_key,
+            "mode": mode,
+            "status": status,
+            "grade": grade,
+            "generation_mode": generation_mode,
         }
