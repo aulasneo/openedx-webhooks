@@ -22,8 +22,7 @@ def send(url, payload, www_form_urlencoded: bool = False):
         else:
             headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
 
-        # pylint: disable=unnecessary-lambda
-        r = requests.post(url, data=json.dumps(payload, default=lambda o: str(o)), headers=headers, timeout=10)
+        r = requests.post(url, data=json.dumps(payload, default=str), headers=headers, timeout=10)
 
         r.raise_for_status()
     except requests.ConnectionError as e:

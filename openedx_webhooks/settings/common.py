@@ -29,4 +29,10 @@ def plugin_settings(settings):
                 "openedx_webhooks.filters.CourseEnrollmentStartedWebFilter"
             ]
         },
+        "org.openedx.learning.course.unenrollment.started.v1": {
+            "fail_silently": False,
+            "pipeline": [
+                "openedx_webhooks.filters.CourseUnenrollmentStartedWebFilter"
+            ]
+        },
     }
