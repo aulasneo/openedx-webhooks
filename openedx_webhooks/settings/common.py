@@ -41,4 +41,10 @@ def plugin_settings(settings):
                 "openedx_webhooks.filters.CertificateCreationRequestedWebFilter"
             ]
         },
+        "org.openedx.learning.certificate.render.started.v1": {
+            "fail_silently": False,
+            "pipeline": [
+                "openedx_webhooks.filters.CertificateRenderStartedWebFilter"
+            ]
+        },
     }

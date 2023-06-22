@@ -19,16 +19,20 @@ from datetime import datetime
 
 import requests.exceptions
 from common.djangoapps.student.models import UserProfile  # pylint: disable=import-error
+from django.contrib.auth import get_user_model
 from django.db import models
+from django.http import HttpResponse
 from opaque_keys.edx.keys import CourseKey
 from openedx_filters import PipelineStep
 from openedx_filters.learning.filters import (
     CertificateCreationRequested,
+    CertificateRenderStarted,
     CourseEnrollmentStarted,
     CourseUnenrollmentStarted,
     StudentLoginRequested,
     StudentRegistrationRequested,
 )
+from lms.djangoapps.courseware.courses import get_course_blocks_completion_summary  # pylint: disable=import-error
 
 from .models import Webfilter
 from .utils import send
@@ -36,13 +40,10 @@ from .utils import send
 logger = logging.getLogger(__name__)
 
 
-def _process_filter(event_name, data, exception):
+def _process_filter(webfilters, data, exception):
     """
     Process all events with user data.
     """
-    logger.debug(f"Processing filter: {event_name}")
-    webfilters = Webfilter.objects.filter(enabled=True, event=event_name)
-
     response_data = {}
     response_exceptions = {}
 
@@ -55,14 +56,14 @@ def _process_filter(event_name, data, exception):
         else:
             payload[key] = value
 
-    # Add event metadata
-    payload['event_metadata'] = {
-        'event_type': event_name,
-        'time': str(datetime.now())
-    }
-
     for webfilter in webfilters:
-        logger.info(f"{event_name} webhook filter triggered to {webfilter.webhook_url}")
+        logger.info(f"{webfilter.event} webhook filter triggered to {webfilter.webhook_url}")
+
+        # Add event metadata
+        payload['event_metadata'] = {
+            'event_type': webfilter.event,
+            'time': str(datetime.now())
+        }
 
         try:
             # Send the request to the webhook URL
@@ -71,39 +72,43 @@ def _process_filter(event_name, data, exception):
         except requests.exceptions.RequestException as e:
             if webfilter.halt_on_request_exception:
                 logger.info(f"Halting on request exception '{e.strerror}'. "
-                            f"{event_name} webhook filter triggered to {webfilter.webhook_url}")
+                            f"{webfilter.event} webhook filter triggered to {webfilter.webhook_url}")
                 raise exception(
                     message=e.strerror,
                     redirect_to=webfilter.redirect_on_request_exception,
                 ) from e
             logger.info(f"Not halting on request exception '{e}'."
-                        f"{event_name} webhook filter triggered to {webfilter.webhook_url}")
+                        f"{webfilter.event} webhook filter triggered to {webfilter.webhook_url}")
             return None
 
         if 400 <= response.status_code <= 499 and webfilter.halt_on_4xx:
-            logger.info(f"Request to {webfilter.webhook_url} after webhook event {event_name} returned status code "
-                        f"{response.status_code} ({response.reason}). Redirecting to {webfilter.redirect_on_4xx}")
+            logger.info(f"Request to {webfilter.webhook_url} after webhook event {webfilter.event} returned status "
+                        f"code {response.status_code} ({response.reason}). Redirecting to {webfilter.redirect_on_4xx}")
             raise exception(
-                message=f"Request to {webfilter.webhook_url} after webhook event {event_name} returned status code "
-                        f"{response.status_code} ({response.reason})",
+                message=f"Request to {webfilter.webhook_url} after webhook event {webfilter.event} returned status "
+                        f"code {response.status_code} ({response.reason})",
                 redirect_to=webfilter.redirect_on_4xx,
                 status_code=response.status_code
             )
 
         if 500 <= response.status_code <= 599 and webfilter.halt_on_5xx:
-            logger.info(f"Request to {webfilter.webhook_url} after webhook event {event_name} returned status code "
-                        f"{response.status_code} ({response.reason}). Redirecting to {webfilter.redirect_on_5xx}")
+            logger.info(f"Request to {webfilter.webhook_url} after webhook event {webfilter.event} returned status "
+                        f"code {response.status_code} ({response.reason}). Redirecting to {webfilter.redirect_on_5xx}")
             raise exception(
-                message=f"Request to {webfilter.webhook_url} after webhook event {event_name} returned status code "
-                        f"{response.status_code} ({response.reason})",
+                message=f"Request to {webfilter.webhook_url} after webhook event {webfilter.event} returned status "
+                        f"code {response.status_code} ({response.reason})",
                 redirect_to=webfilter.redirect_on_5xx,
                 status_code=response.status_code
             )
 
-        logger.info(f"Request to {webfilter.webhook_url} after webhook event {event_name} returned status code "
+        logger.info(f"Request to {webfilter.webhook_url} after webhook event {webfilter.event} returned status code "
                     f"{response.status_code} ({response.reason}).")
 
-        response = json.loads(response.text)
+        try:
+            response = json.loads(response.text)
+        except json.decoder.JSONDecodeError as e:
+            logger.warning(f"Non JSON response received from {webfilter.webhook_url}: '{response.text}' ({e})")
+            response = {}
 
         if not webfilter.disable_filtering:
             # We need to accumulate the responses in case there are many webhook filters
@@ -174,15 +179,18 @@ def update_object(o, data):
     Update a generic object with dict with data.
 
     """
-    if isinstance(data, dict):
-        for key, value in data.items():
-            if isinstance(getattr(o, key), datetime):
-                # Handle date time data
-                setattr(o, key, datetime.fromisoformat(value))
-            elif isinstance(getattr(o, key), bool):
-                setattr(o, key, value.lower() == 'true')
-            else:
-                setattr(o, key, value)
+    try:
+        if isinstance(data, dict):
+            for key, value in data.items():
+                if isinstance(getattr(o, key), datetime):
+                    # Handle date time data
+                    setattr(o, key, datetime.fromisoformat(value))
+                elif isinstance(getattr(o, key), bool):
+                    setattr(o, key, value.lower() == 'true')
+                else:
+                    setattr(o, key, value)
+    except AttributeError as e:
+        logger.error(f"Error '{e} updating {o} with {data}")
 
 
 def _check_for_exception(exceptions, exception_class):
@@ -191,6 +199,14 @@ def _check_for_exception(exceptions, exception_class):
     """
     if exception_class.__name__ in exceptions:
         exception_settings = exceptions.get(exception_class.__name__)
+
+        # In the special case of CertificateRenderStarted.RenderCustomResponse the exception must include a
+        # response object
+        if exception_class is CertificateRenderStarted.RenderCustomResponse:
+            raise CertificateRenderStarted.RenderCustomResponse(
+                message="Render Custom Response",
+                response=HttpResponse(**exception_settings))
+
         if isinstance(exception_settings, str):
             raise exception_class(exception_settings)
         if isinstance(exception_settings, dict):
@@ -290,27 +306,33 @@ class StudentLoginRequestedWebFilter(PipelineStep):
     def run_filter(self, user):  # pylint: disable=arguments-differ
         """Execute the filter."""
         event = "StudentLoginRequested"
-        logger.info(f"Webfilter for {event} event for user {user}")
 
-        if user:
-            # If the log in attempt is unsuccessfull, the user object will be None
-            content, exceptions = _process_filter(event_name=event,
-                                                  data={
-                                                      "user": user,
-                                                      "profile": user.profile,
-                                                  },
-                                                  exception=StudentLoginRequested.PreventLogin)
+        webfilters = Webfilter.objects.filter(enabled=True, event=event)
 
-            update_model(user, content.get('user'))
-            update_model(user.profile, content.get('profile'))
-        else:
-            content, exceptions = _process_filter(event_name=event,
-                                                  data={},
-                                                  exception=StudentLoginRequested.PreventLogin)
+        if webfilters:
+            logger.info(f"Webfilter for {event} event for user {user}")
 
-        _check_for_exception(exceptions, StudentLoginRequested.PreventLogin)
+            if user:
+                # If the log in attempt is unsuccessfull, the user object will be None
+                content, exceptions = _process_filter(webfilters=webfilters,
+                                                      data={
+                                                          "user": user,
+                                                          "profile": user.profile,
+                                                      },
+                                                      exception=StudentLoginRequested.PreventLogin)
 
-        return {"user": user}
+                update_model(user, content.get('user'))
+                update_model(user.profile, content.get('profile'))
+            else:
+                content, exceptions = _process_filter(webfilters=webfilters,
+                                                      data={},
+                                                      exception=StudentLoginRequested.PreventLogin)
+
+            _check_for_exception(exceptions, StudentLoginRequested.PreventLogin)
+
+            return {"user": user}
+
+        return None
 
 
 class StudentRegistrationRequestedWebFilter(PipelineStep):
@@ -396,40 +418,45 @@ class StudentRegistrationRequestedWebFilter(PipelineStep):
     def run_filter(self, form_data):  # pylint: disable=arguments-differ
         """Execute the filter."""
         event = "StudentRegistrationRequested"
-        logger.info(f"Webfilter for {event} event. Form data: {form_data}.")
+        webfilters = Webfilter.objects.filter(enabled=True, event=event)
 
-        content, exceptions = _process_filter(event_name=event,
-                                              data=form_data,
-                                              exception=StudentRegistrationRequested.PreventRegistration)
+        if webfilters:
+            logger.info(f"Webfilter for {event} event. Form data: {form_data}.")
 
-        form_data_response = content.get('form_data')
+            content, exceptions = _process_filter(webfilters=webfilters,
+                                                  data=form_data,
+                                                  exception=StudentRegistrationRequested.PreventRegistration)
 
-        # Validate form data response
-        if 'level_of_education' in form_data_response \
-            and form_data_response.get('level_of_education') not in \
-                [choice[0] for choice in UserProfile.LEVEL_OF_EDUCATION_CHOICES]:
-            raise ValueError(f"'{form_data_response.get('level_of_education')}' is not a valid level of education."
-                             f"Valid options are: " +
-                             ", ".join([f"{c[0]}: {c[1]}" for c in UserProfile.LEVEL_OF_EDUCATION_CHOICES]))
+            form_data_response = content.get('form_data')
 
-        if 'gender' in form_data_response \
-            and form_data_response.get('gender') not in \
-                [choice[0] for choice in UserProfile.GENDER_CHOICES]:
-            raise ValueError(f"'{form_data_response.get('gender')}' is not a valid gender."
-                             f"Valid options are: " +
-                             ", ".join([f"{c[0]}: {c[1]}" for c in UserProfile.GENDER_CHOICES]))
+            # Validate form data response
+            if 'level_of_education' in form_data_response \
+                and form_data_response.get('level_of_education') not in \
+                    [choice[0] for choice in UserProfile.LEVEL_OF_EDUCATION_CHOICES]:
+                raise ValueError(f"'{form_data_response.get('level_of_education')}' is not a valid level of education."
+                                 f"Valid options are: " +
+                                 ", ".join([f"{c[0]}: {c[1]}" for c in UserProfile.LEVEL_OF_EDUCATION_CHOICES]))
 
-        if 'terms_of_service' in form_data_response \
-                and form_data_response.get('terms_of_service').lower() not in ["true", "false"]:
-            raise ValueError(f"'{form_data_response.get('terms_of_service')}' is not a boolean value."
-                             f"Valid options are: " +
-                             ", ".join(["true", "false"]))
+            if 'gender' in form_data_response \
+                and form_data_response.get('gender') not in \
+                    [choice[0] for choice in UserProfile.GENDER_CHOICES]:
+                raise ValueError(f"'{form_data_response.get('gender')}' is not a valid gender."
+                                 f"Valid options are: " +
+                                 ", ".join([f"{c[0]}: {c[1]}" for c in UserProfile.GENDER_CHOICES]))
 
-        updated_form_data = update_query_dict(form_data, form_data_response)
+            if 'terms_of_service' in form_data_response \
+                    and form_data_response.get('terms_of_service').lower() not in ["true", "false"]:
+                raise ValueError(f"'{form_data_response.get('terms_of_service')}' is not a boolean value."
+                                 f"Valid options are: " +
+                                 ", ".join(["true", "false"]))
 
-        _check_for_exception(exceptions, StudentRegistrationRequested.PreventRegistration)
+            updated_form_data = update_query_dict(form_data, form_data_response)
 
-        return {"form_data": updated_form_data}
+            _check_for_exception(exceptions, StudentRegistrationRequested.PreventRegistration)
+
+            return {"form_data": updated_form_data}
+
+        return None
 
 
 class CourseEnrollmentStartedWebFilter(PipelineStep):
@@ -523,34 +550,40 @@ class CourseEnrollmentStartedWebFilter(PipelineStep):
             mode (str): is a string specifying what kind of enrollment.
         """
         event = "CourseEnrollmentStarted"
-        logger.info(f"Webfilter for {event} event. User: {user}, course: {course_key}, mode: {mode}.")
 
-        data = {
-            'user': user,
-            'profile': user.profile,
-            'course_key': course_key,
-            'mode': mode,
-        }
-        content, exceptions = _process_filter(event_name=event,
-                                              data=data,
-                                              exception=CourseEnrollmentStarted.PreventEnrollment)
+        webfilters = Webfilter.objects.filter(enabled=True, event=event)
 
-        update_model(user, content.get('user'))
-        update_model(user.profile, content.get('profile'))
+        if webfilters:
+            logger.info(f"Webfilter for {event} event. User: {user}, course: {course_key}, mode: {mode}.")
 
-        if 'course_key' in content:
-            course_key = CourseKey.from_string(content.get('course_key'))
+            data = {
+                'user': user,
+                'profile': user.profile,
+                'course_key': course_key,
+                'mode': mode,
+            }
+            content, exceptions = _process_filter(webfilters=webfilters,
+                                                  data=data,
+                                                  exception=CourseEnrollmentStarted.PreventEnrollment)
 
-        if 'mode' in content:
-            mode = content.get('mode')
+            update_model(user, content.get('user'))
+            update_model(user.profile, content.get('profile'))
 
-        _check_for_exception(exceptions, CourseEnrollmentStarted.PreventEnrollment)
+            if 'course_key' in content:
+                course_key = CourseKey.from_string(content.get('course_key'))
 
-        return {
-            "user": user,
-            "course_key": course_key,
-            "mode": mode,
-        }
+            if 'mode' in content:
+                mode = content.get('mode')
+
+            _check_for_exception(exceptions, CourseEnrollmentStarted.PreventEnrollment)
+
+            return {
+                "user": user,
+                "course_key": course_key,
+                "mode": mode,
+            }
+
+        return None
 
 
 class CourseUnenrollmentStartedWebFilter(PipelineStep):
@@ -635,27 +668,33 @@ class CourseUnenrollmentStartedWebFilter(PipelineStep):
             enrollment (User): is an enrollment object.
         """
         event = "CourseUnenrollmentStarted"
-        logger.info(f"Webfilter for {event} event. Enrollment: {enrollment}")
 
-        user = enrollment.user
+        webfilters = Webfilter.objects.filter(enabled=True, event=event)
 
-        data = {
-            'user': user,
-            'profile': user.profile,
-            'enrollment': enrollment,
-        }
-        content, exceptions = _process_filter(event_name=event,
-                                              data=data,
-                                              exception=CourseUnenrollmentStarted.PreventUnenrollment)
+        if webfilters:
+            logger.info(f"Webfilter for {event} event. Enrollment: {enrollment}")
 
-        update_model(user, content.get('user'))
-        update_model(user.profile, content.get('profile'))
+            user = enrollment.user
 
-        _check_for_exception(exceptions, CourseUnenrollmentStarted.PreventUnenrollment)
+            data = {
+                'user': user,
+                'profile': user.profile,
+                'enrollment': enrollment,
+            }
+            content, exceptions = _process_filter(webfilters=webfilters,
+                                                  data=data,
+                                                  exception=CourseUnenrollmentStarted.PreventUnenrollment)
 
-        return {
-            "enrollment": enrollment,
-        }
+            update_model(user, content.get('user'))
+            update_model(user.profile, content.get('profile'))
+
+            _check_for_exception(exceptions, CourseUnenrollmentStarted.PreventUnenrollment)
+
+            return {
+                "enrollment": enrollment,
+            }
+
+        return None
 
 
 class CertificateCreationRequestedWebFilter(PipelineStep):
@@ -712,7 +751,7 @@ class CertificateCreationRequestedWebFilter(PipelineStep):
             "passed": true,
             "letter_grade": "Pass",
             "force_update_subsections": false,
-            "_subsection_grade_factory": "<lms.djangoapps.grades.subsection_grade_factory.SubsectionGradeFactory object at 0x7fb70a728310>"
+            "_subsection_grade_factory": "<lms.djangoapps.grades.subsection_grade_factory.SubsectionGradeFactory >"
           },
           "generation_mode": "self",
           "event_metadata": {
@@ -749,6 +788,9 @@ class CertificateCreationRequestedWebFilter(PipelineStep):
         }
 
     All data keys are optionals, as well as the keys inside each.
+
+    Note:
+        Changes in the grade values do not take effect in the certificate and do not modify the user's grade.
     """
 
     def run_filter(self, user, course_key, mode, status, grade, generation_mode):  # pylint: disable=arguments-differ
@@ -765,46 +807,270 @@ class CertificateCreationRequestedWebFilter(PipelineStep):
                 for everything else.
         """
         event = "CertificateCreationRequested"
-        logger.info(f"Webfilter for {event} event. User: {user}, course: {course_key}, status: {status}")
 
-        data = {
-            "user": user,
-            "profile": user.profile,
-            "course_key": course_key,
-            "mode": mode,
-            "status": status,
-            "grade": grade.__dict__,
-            "generation_mode": generation_mode,
+        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+
+        if webfilters:
+            logger.info(f"Webfilter for {event} event. User: {user}, course: {course_key}, status: {status}")
+
+            data = {
+                "user": user,
+                "profile": user.profile,
+                "course_key": course_key,
+                "mode": mode,
+                "status": status,
+                "grade": grade.__dict__,
+                "generation_mode": generation_mode,
+                "completion_summary": get_course_blocks_completion_summary(course_key, user)
+            }
+
+            content, exceptions = _process_filter(webfilters=webfilters,
+                                                  data=data,
+                                                  exception=CertificateCreationRequested.PreventCertificateCreation)
+
+            update_model(user, content.get('user'))
+            update_model(user.profile, content.get('profile'))
+
+            if 'course_key' in content:
+                course_key = CourseKey.from_string(content.get('course_key'))
+
+            if 'mode' in content:
+                mode = content.get('mode')
+
+            if 'status' in content:
+                status = content.get('status')
+
+            if 'generation_mode' in content:
+                generation_mode = content.get('generation_mode')
+
+            update_object(grade, content.get('grade'))
+
+            _check_for_exception(exceptions, CertificateCreationRequested.PreventCertificateCreation)
+
+            return {
+                "user": user,
+                "course_key": course_key,
+                "mode": mode,
+                "status": status,
+                "grade": grade,
+                "generation_mode": generation_mode,
+            }
+
+        return None
+
+
+class CertificateRenderStartedWebFilter(PipelineStep):
+    """
+    Process CertificateRenderStarted filter.
+
+    This filter is triggered when a certificate is about to be rendered.
+
+    It will POST a json to the webhook url with the enrollment object.
+
+    EXAMPLE::
+
+        {
+          "context": {
+            "user_language": "en",
+            "platform_name": "Your Platform Name Here",
+            "course_id": "course-v1:test+test+test",
+            "accomplishment_class_append": "accomplishment-certificate",
+            "company_about_url": "/about",
+            "company_privacy_url": "/privacy",
+            "company_tos_url": "/tos_and_honor",
+            "company_verified_certificate_url": "http://www.example.com/verified-certificate",
+            "logo_src": "/media/certificate_template_assets/2/logo.png",
+            "logo_url": "http://local.overhang.io:8000",
+            "copyright_text": "&copy; 2023 Aulasneo DEV. All rights reserved.",
+            "document_title": "test test Certificate | Aulasneo DEV",
+            "company_tos_urltext": "Terms of Service & Honor Code",
+            "company_privacy_urltext": "Privacy Policy",
+            "logo_subtitle": "Certificate Validation",
+            "accomplishment_copy_about": "About Aulasneo DEV Accomplishments",
+            "certificate_date_issued_title": "Issued On:",
+            "certificate_id_number_title": "Certificate ID Number",
+            "certificate_info_title": "About Aulasneo DEV Certificates",
+            "certificate_verify_title": "How Aulasneo DEV Validates Student Certificates",
+            "certificate_verify_description": "Certificates issued by Aulasneo DEV ",
+            "certificate_verify_urltext": "Validate this certificate for yourself",
+            "company_about_description": "Aulasneo DEV offers interactive online classes and MOOCs.",
+            "company_about_title": "About Aulasneo DEV",
+            "company_about_urltext": "Learn more about Aulasneo DEV",
+            "company_courselist_urltext": "Learn with Aulasneo DEV",
+            "company_careers_urltext": "Work at Aulasneo DEV",
+            "company_contact_urltext": "Contact Aulasneo DEV",
+            "document_banner": "Aulasneo DEV acknowledges the following student accomplishment",
+            "certificate_data": {
+              "id": 12345678,
+              "name": "Name of the certificate",
+              "description": "Description of the certificate",
+              "is_active": true,
+              "version": 1,
+              "signatories": [
+                {
+                  "name": "",
+                  "title": "President of the board",
+                  "organization": "Aulasneo",
+                  "signature_image_path": "/asset-v1:test+test+test+type@asset+block@Signature_President.png",
+                  "certificate": 12345678,
+                  "id": 12345678
+                },
+                {
+                  "name": "",
+                  "title": "CEO",
+                  "organization": "Aulasneo",
+                  "signature_image_path": "/asset-v1:test+test+test+type@asset+block@Signature_CEO.png",
+                  "certificate": 12345678,
+                  "id": 12345678
+                }
+              ]
+            },
+            "certificate_type": "Honor Code",
+            "certificate_title": "Certificate of Achievement",
+            "organization_long_name": "test",
+            "organization_short_name": "test",
+            "accomplishment_copy_course_org": "test",
+            "organization_logo": "",
+            "full_course_image_url": "http://example.com/asset-v1:t+t+test+type@asset+block@images_course_image.jpg",
+            "accomplishment_copy_course_name": "Test",
+            "course_number": "test",
+            "is_integrity_signature_enabled_for_course": false,
+            "accomplishment_copy_course_description": "a course of study offered by test.",
+            "username": "test1",
+            "course_mode": "honor",
+            "accomplishment_user_id": 17,
+            "accomplishment_copy_name": "test1",
+            "accomplishment_copy_username": "test1",
+            "accomplishment_more_title": "More Information About test1's Certificate:",
+            "accomplishment_banner_opening": "test1, you earned a certificate!",
+            "accomplishment_banner_congrats": "Congratulations! This page summarizes what you accomplished.",
+            "accomplishment_copy_more_about": "More about test1's accomplishment",
+            "facebook_share_enabled": false,
+            "facebook_app_id": null,
+            "facebook_share_text": null,
+            "twitter_share_enabled": false,
+            "twitter_share_text": null,
+            "share_url": "http://local.overhang.io:8000/certificates/b721009ebdff49cea9a443e05a6959fc",
+            "twitter_url": "",
+            "linked_in_url": null,
+            "certificate_id_number": "b721009ebdff49cea9a443e05a6959fc",
+            "certificate_verify_url": "Noneb721009ebdff49cea9a443e05a6959fcNone",
+            "certificate_date_issued": "June 14, 2023",
+            "document_meta_description": "This is a valid Aulasneo DEV certificate for test1",
+            "accomplishment_copy_description_full": "successfully completed, received a passing grade",
+            "certificate_type_description": "An Honor Code certificate signifies that a learner has ...",
+            "certificate_info_description": "Aulasneo DEV acknowledges achievements through certificates, ...",
+            "badge": null
+          },
+          "custom_template": {
+            "id": 1,
+            "created": "2023-06-14 18:39:56.824500+00:00",
+            "modified": "2023-06-14 18:46:46.156615+00:00",
+            "name": "cert_template",
+            "description": "Test template",
+            "template": "<html><body>${accomplishment_banner_congrats}</body></html>",
+            "organization_id": 1,
+            "course_key": "course-v1:test+test+test",
+            "mode": "honor",
+            "is_active": true,
+            "language": ""
+          },
+          "event_metadata": {
+            "event_type": "CertificateRenderStarted",
+            "time": "2023-06-14 18:05:54.815086"
+          }
         }
 
-        content, exceptions = _process_filter(event_name=event,
-                                              data=data,
-                                              exception=CertificateCreationRequested.PreventCertificateCreation)
 
-        update_model(user, content.get('user'))
-        update_model(user.profile, content.get('profile'))
+    The webhook processor can return a json with two objects: data and exception.
 
-        if 'course_key' in content:
-            course_key = CourseKey.from_string(content.get('course_key'))
+    EXAMPLE::
 
-        if 'mode' in content:
-            mode = content.get('mode')
-
-        if 'status' in content:
-            status = content.get('status')
-
-        if 'generation_mode' in content:
-            generation_mode = content.get('generation_mode')
-
-        update_object(grade, content.get('grade'))
-
-        _check_for_exception(exceptions, CertificateCreationRequested.PreventCertificateCreation)
-
-        return {
-            "user": user,
-            "course_key": course_key,
-            "mode": mode,
-            "status": status,
-            "grade": grade,
-            "generation_mode": generation_mode,
+        {
+            "data": {
+                "context": {
+                    "additional_variable": "test test",
+                    "accomplishment_copy_name": "Name"
+                },
+                "custom_template": {
+                    "template":"<html><body>${additional_variable}</body></html>"
+                }
+            }
         }
+
+    All data keys are optionals, as well as the keys inside each.
+
+    If you override any of the template fields, the change will not modify the existing template, but will
+    be used for this certificate rendering only.
+
+    Exceptions:
+
+        "exceptions": {
+            "RedirectToPage": {
+                "redirect_to": <URL to redirect>
+            }
+
+            "RenderCustomResponse": {
+                "content": <html content>,
+                "content_type": <MIME type. By default "text/html; charset=utf-8",
+                "status": <HTTP status code. By default=200>,
+                "reason": <HTTP response phrase. If not provided, a default phrase will be used.>,
+                "charset": <If not given it will be extracted from content_type, and if that is unsuccessful,
+                    the DEFAULT_CHARSET setting will be used.>,
+                "headers": <dict of HTTP headers>
+            }
+
+            "RenderAlternativeInvalidCertificate": {
+                "template_name": <template name or leave empty to render the standard invalid certificate>
+            }
+        }
+
+    Note:
+        Changes in the grade values do not take effect in the certificate and do not modify the user's grade.
+        To be able to update the certificate template, it must exist, be active and be associated to the course
+        and organization.
+    """
+
+    def run_filter(self, context, custom_template):  # pylint: disable=arguments-differ
+        """
+        Execute a filter with the signature specified.
+
+        Arguments:
+            context (dict): context dictionary for certificate template.
+            custom_template (CertificateTemplate): edxapp object representing custom web certificate template.
+        """
+        event = "CertificateRenderStarted"
+
+        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+
+        if webfilters:
+            logger.info(f"Webfilter for {event} event.")
+
+            user = get_user_model().objects.get(id=context.get('accomplishment_user_id'))
+            course_key = CourseKey.from_string(context.get('course_id'))
+
+            data = {
+                "context": context,
+                "custom_template": custom_template,
+                "completion_summary": get_course_blocks_completion_summary(course_key, user)
+            }
+
+            content, exceptions = _process_filter(webfilters=webfilters,
+                                                  data=data,
+                                                  exception=CertificateRenderStarted.RedirectToPage)
+
+            update_object(custom_template, content.get('custom_template'))
+
+            if 'context' in content:
+                context.update(content.get('context'))
+
+            _check_for_exception(exceptions, CertificateRenderStarted.RedirectToPage)
+            _check_for_exception(exceptions, CertificateRenderStarted.RenderAlternativeInvalidCertificate)
+            _check_for_exception(exceptions, CertificateRenderStarted.RenderCustomResponse)
+
+            return {
+                "context": context,
+                "custom_template": custom_template,
+            }
+
+        return None
