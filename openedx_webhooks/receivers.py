@@ -121,18 +121,18 @@ def certificate_revoked_receiver(certificate, **kwargs):
     _process_event("CERTIFICATE_REVOKED", 'certificate', certificate, **kwargs)
 
 
-def cohort_membership_changed_receiver(certificate, **kwargs):
+def cohort_membership_changed_receiver(cohort, **kwargs):
     """
     Handle COHORT_MEMBERSHIP_CHANGED signal.
     """
-    _process_event("COHORT_MEMBERSHIP_CHANGED", 'certificate', certificate, **kwargs)
+    _process_event("COHORT_MEMBERSHIP_CHANGED", 'cohort', cohort, **kwargs)
 
 
-def course_discussions_changed_receiver(certificate, **kwargs):
+def course_discussions_changed_receiver(configuration, **kwargs):
     """
     Handle COURSE_DISCUSSIONS_CHANGED signal.
     """
-    _process_event("COURSE_DISCUSSIONS_CHANGED", 'certificate', certificate, **kwargs)
+    _process_event("COURSE_DISCUSSIONS_CHANGED", 'configuration', configuration, **kwargs)
 #
 #
 # def persistent_grade_summary_receiver(certificate, **kwargs):

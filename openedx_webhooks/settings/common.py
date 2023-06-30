@@ -47,4 +47,10 @@ def plugin_settings(settings):
                 "openedx_webhooks.filters.CertificateRenderStartedWebFilter"
             ]
         },
+        "org.openedx.learning.cohort.change.requested.v1": {
+            "fail_silently": False,
+            "pipeline": [
+                "openedx_webhooks.filters.CohortChangeRequestedWebFilter"
+            ]
+        },
     }

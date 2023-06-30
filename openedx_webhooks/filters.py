@@ -22,17 +22,18 @@ from common.djangoapps.student.models import UserProfile  # pylint: disable=impo
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.http import HttpResponse
+from lms.djangoapps.courseware.courses import get_course_blocks_completion_summary  # pylint: disable=import-error
 from opaque_keys.edx.keys import CourseKey
 from openedx_filters import PipelineStep
 from openedx_filters.learning.filters import (
     CertificateCreationRequested,
     CertificateRenderStarted,
+    CohortChangeRequested,
     CourseEnrollmentStarted,
     CourseUnenrollmentStarted,
     StudentLoginRequested,
     StudentRegistrationRequested,
 )
-from lms.djangoapps.courseware.courses import get_course_blocks_completion_summary  # pylint: disable=import-error
 
 from .models import Webfilter
 from .utils import send
@@ -1071,6 +1072,193 @@ class CertificateRenderStartedWebFilter(PipelineStep):
             return {
                 "context": context,
                 "custom_template": custom_template,
+            }
+
+        return None
+
+
+class CohortChangeRequestedWebFilter(PipelineStep):
+    """
+    Process CohortChangeRequested filter.
+
+    This filter is triggered when a user is about to be changed to another cohort.
+
+    It will POST a json to the webhook url with the cohort object.
+
+    EXAMPLE::
+
+        {
+          "context": {
+            "user_language": "en",
+            "platform_name": "Your Platform Name Here",
+            "course_id": "course-v1:test+test+test",
+            "accomplishment_class_append": "accomplishment-certificate",
+            "company_about_url": "/about",
+            "company_privacy_url": "/privacy",
+            "company_tos_url": "/tos_and_honor",
+            "company_verified_certificate_url": "http://www.example.com/verified-certificate",
+            "logo_src": "/media/certificate_template_assets/2/logo.png",
+            "logo_url": "http://local.overhang.io:8000",
+            "copyright_text": "&copy; 2023 Aulasneo DEV. All rights reserved.",
+            "document_title": "test test Certificate | Aulasneo DEV",
+            "company_tos_urltext": "Terms of Service & Honor Code",
+            "company_privacy_urltext": "Privacy Policy",
+            "logo_subtitle": "Certificate Validation",
+            "accomplishment_copy_about": "About Aulasneo DEV Accomplishments",
+            "certificate_date_issued_title": "Issued On:",
+            "certificate_id_number_title": "Certificate ID Number",
+            "certificate_info_title": "About Aulasneo DEV Certificates",
+            "certificate_verify_title": "How Aulasneo DEV Validates Student Certificates",
+            "certificate_verify_description": "Certificates issued by Aulasneo DEV ",
+            "certificate_verify_urltext": "Validate this certificate for yourself",
+            "company_about_description": "Aulasneo DEV offers interactive online classes and MOOCs.",
+            "company_about_title": "About Aulasneo DEV",
+            "company_about_urltext": "Learn more about Aulasneo DEV",
+            "company_courselist_urltext": "Learn with Aulasneo DEV",
+            "company_careers_urltext": "Work at Aulasneo DEV",
+            "company_contact_urltext": "Contact Aulasneo DEV",
+            "document_banner": "Aulasneo DEV acknowledges the following student accomplishment",
+            "certificate_data": {
+              "id": 12345678,
+              "name": "Name of the certificate",
+              "description": "Description of the certificate",
+              "is_active": true,
+              "version": 1,
+              "signatories": [
+                {
+                  "name": "",
+                  "title": "President of the board",
+                  "organization": "Aulasneo",
+                  "signature_image_path": "/asset-v1:test+test+test+type@asset+block@Signature_President.png",
+                  "certificate": 12345678,
+                  "id": 12345678
+                },
+                {
+                  "name": "",
+                  "title": "CEO",
+                  "organization": "Aulasneo",
+                  "signature_image_path": "/asset-v1:test+test+test+type@asset+block@Signature_CEO.png",
+                  "certificate": 12345678,
+                  "id": 12345678
+                }
+              ]
+            },
+            "certificate_type": "Honor Code",
+            "certificate_title": "Certificate of Achievement",
+            "organization_long_name": "test",
+            "organization_short_name": "test",
+            "accomplishment_copy_course_org": "test",
+            "organization_logo": "",
+            "full_course_image_url": "http://example.com/asset-v1:t+t+test+type@asset+block@images_course_image.jpg",
+            "accomplishment_copy_course_name": "Test",
+            "course_number": "test",
+            "is_integrity_signature_enabled_for_course": false,
+            "accomplishment_copy_course_description": "a course of study offered by test.",
+            "username": "test1",
+            "course_mode": "honor",
+            "accomplishment_user_id": 17,
+            "accomplishment_copy_name": "test1",
+            "accomplishment_copy_username": "test1",
+            "accomplishment_more_title": "More Information About test1's Certificate:",
+            "accomplishment_banner_opening": "test1, you earned a certificate!",
+            "accomplishment_banner_congrats": "Congratulations! This page summarizes what you accomplished.",
+            "accomplishment_copy_more_about": "More about test1's accomplishment",
+            "facebook_share_enabled": false,
+            "facebook_app_id": null,
+            "facebook_share_text": null,
+            "twitter_share_enabled": false,
+            "twitter_share_text": null,
+            "share_url": "http://local.overhang.io:8000/certificates/b721009ebdff49cea9a443e05a6959fc",
+            "twitter_url": "",
+            "linked_in_url": null,
+            "certificate_id_number": "b721009ebdff49cea9a443e05a6959fc",
+            "certificate_verify_url": "Noneb721009ebdff49cea9a443e05a6959fcNone",
+            "certificate_date_issued": "June 14, 2023",
+            "document_meta_description": "This is a valid Aulasneo DEV certificate for test1",
+            "accomplishment_copy_description_full": "successfully completed, received a passing grade",
+            "certificate_type_description": "An Honor Code certificate signifies that a learner has ...",
+            "certificate_info_description": "Aulasneo DEV acknowledges achievements through certificates, ...",
+            "badge": null
+          },
+          "custom_template": {
+            "id": 1,
+            "created": "2023-06-14 18:39:56.824500+00:00",
+            "modified": "2023-06-14 18:46:46.156615+00:00",
+            "name": "cert_template",
+            "description": "Test template",
+            "template": "<html><body>${accomplishment_banner_congrats}</body></html>",
+            "organization_id": 1,
+            "course_key": "course-v1:test+test+test",
+            "mode": "honor",
+            "is_active": true,
+            "language": ""
+          },
+          "event_metadata": {
+            "event_type": "CertificateRenderStarted",
+            "time": "2023-06-14 18:05:54.815086"
+          }
+        }
+
+
+    The webhook processor can return a json with two objects: data and exception.
+
+    EXAMPLE::
+
+        {
+            "data": {
+            }
+        }
+
+    All data keys are optionals, as well as the keys inside each.
+
+    Exceptions:
+
+        "exceptions": {
+            "PreventCohortChange": <message>
+        }
+
+    """
+
+    def run_filter(self, current_membership, target_cohort):  # pylint: disable=arguments-differ
+        """
+        Execute a filter with the signature specified.
+
+        Arguments:
+            current_membership (CohortMembership): edxapp object representing the user's cohort current membership
+                object.
+            target_cohort (CourseUserGroup): edxapp object representing the new user's cohort.
+        """
+        event = "CohortChangeRequested"
+
+        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+
+        if webfilters:
+            logger.info(f"Webfilter for {event} event.")
+
+            user = get_user_model().objects.get(id=current_membership.user_id)
+            user_profile = user.profile
+            course_key = current_membership.course_id
+
+            data = {
+                "current_membership": current_membership,
+                "target_cohort": target_cohort,
+                "user": user,
+                "user_profile": user_profile,
+                "course_key": course_key
+            }
+
+            content, exceptions = _process_filter(webfilters=webfilters,
+                                                  data=data,
+                                                  exception=CohortChangeRequested.PreventCohortChange)
+
+            update_object(current_membership, content.get('current_membership'))
+            update_object(target_cohort, content.get('target_cohort'))
+
+            _check_for_exception(exceptions, CohortChangeRequested.PreventCohortChange)
+
+            return {
+                "current_membership": current_membership,
+                "target_cohort": target_cohort,
             }
 
         return None
