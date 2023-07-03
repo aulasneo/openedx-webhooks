@@ -53,4 +53,10 @@ def plugin_settings(settings):
                 "openedx_webhooks.filters.CohortChangeRequestedWebFilter"
             ]
         },
+        "org.openedx.learning.cohort.assignment.requested.v1": {
+            "fail_silently": False,
+            "pipeline": [
+                "openedx_webhooks.filters.CohortAssignmentRequestedWebFilter"
+            ]
+        },
     }

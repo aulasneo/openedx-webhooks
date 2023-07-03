@@ -475,7 +475,7 @@ epub_exclude_files = ['search.html']
 
 # Added to avoid an error caused by importing modules from Open edX
 # Filters: from common.djangoapps.student.models import UserProfile
-autodoc_mock_imports = ['common']
+autodoc_mock_imports = ['common', 'lms']
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {

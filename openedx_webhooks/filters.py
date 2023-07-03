@@ -28,6 +28,7 @@ from openedx_filters import PipelineStep
 from openedx_filters.learning.filters import (
     CertificateCreationRequested,
     CertificateRenderStarted,
+    CohortAssignmentRequested,
     CohortChangeRequested,
     CourseEnrollmentStarted,
     CourseUnenrollmentStarted,
@@ -549,6 +550,7 @@ class CourseEnrollmentStartedWebFilter(PipelineStep):
             user (User): is a Django User object.
             course_key (CourseKey): course key associated with the enrollment.
             mode (str): is a string specifying what kind of enrollment.
+
         """
         event = "CourseEnrollmentStarted"
 
@@ -659,6 +661,7 @@ class CourseUnenrollmentStartedWebFilter(PipelineStep):
         }
 
     "user" and "profile" keys are optionals, as well as the keys inside each.
+
     """
 
     def run_filter(self, enrollment):  # pylint: disable=arguments-differ
@@ -667,6 +670,7 @@ class CourseUnenrollmentStartedWebFilter(PipelineStep):
 
         Arguments:
             enrollment (User): is an enrollment object.
+
         """
         event = "CourseUnenrollmentStarted"
 
@@ -711,7 +715,7 @@ class CertificateCreationRequestedWebFilter(PipelineStep):
         {
           "user": {
             "id": 17,
-            "password": "pbkdf2_sha256$260000$ybxHo0UuhL7dJKFFqSUBIz$j3BMW1/Ubt3E0kB324l+JNT2pYcWeBgUGctDsHTSYbE=",
+            "password": "pbkdf2_sha256***=",
             "last_login": "2023-06-14 16:11:08.341205+00:00",
             "is_superuser": false,
             "username": "test1",
@@ -790,8 +794,7 @@ class CertificateCreationRequestedWebFilter(PipelineStep):
 
     All data keys are optionals, as well as the keys inside each.
 
-    Note:
-        Changes in the grade values do not take effect in the certificate and do not modify the user's grade.
+    Note: Changes in the grade values do not take effect in the certificate and do not modify the user's grade.
     """
 
     def run_filter(self, user, course_key, mode, status, grade, generation_mode):  # pylint: disable=arguments-differ
@@ -804,8 +807,9 @@ class CertificateCreationRequestedWebFilter(PipelineStep):
             mode (str): mode of the certificate.
             status (str): status of the certificate.
             grade (CourseGrade): user's grade in this course run.
-            generation_mode (str): Options are "self" (implying the user generated the cert themself) and "batch"
-                for everything else.
+            generation_mode (str): Options are "self" (implying the user generated the cert themself) and "batch" for
+                everything else.
+
         """
         event = "CertificateCreationRequested"
 
@@ -982,10 +986,9 @@ class CertificateRenderStartedWebFilter(PipelineStep):
           }
         }
 
-
     The webhook processor can return a json with two objects: data and exception.
 
-    EXAMPLE::
+    EXAMPLS::
 
         {
             "data": {
@@ -1004,13 +1007,12 @@ class CertificateRenderStartedWebFilter(PipelineStep):
     If you override any of the template fields, the change will not modify the existing template, but will
     be used for this certificate rendering only.
 
-    Exceptions:
+    Exceptions::
 
         "exceptions": {
             "RedirectToPage": {
                 "redirect_to": <URL to redirect>
             }
-
             "RenderCustomResponse": {
                 "content": <html content>,
                 "content_type": <MIME type. By default "text/html; charset=utf-8",
@@ -1020,16 +1022,14 @@ class CertificateRenderStartedWebFilter(PipelineStep):
                     the DEFAULT_CHARSET setting will be used.>,
                 "headers": <dict of HTTP headers>
             }
-
             "RenderAlternativeInvalidCertificate": {
                 "template_name": <template name or leave empty to render the standard invalid certificate>
             }
         }
 
-    Note:
-        Changes in the grade values do not take effect in the certificate and do not modify the user's grade.
-        To be able to update the certificate template, it must exist, be active and be associated to the course
-        and organization.
+    Note: Changes in the grade values do not take effect in the certificate and do not modify the user's grade.
+    To be able to update the certificate template, it must exist, be active and be associated to the course
+    and organization.
     """
 
     def run_filter(self, context, custom_template):  # pylint: disable=arguments-differ
@@ -1117,7 +1117,7 @@ class CohortChangeRequestedWebFilter(PipelineStep):
             "id": 2,
             "user_id": 4,
             "name": "John Doe",
-            "meta": "{\"old_names\": [[\"Andr\\u00e9s Gonz\\u00e1lez\", \"Name change requested through account API by andres\", \"2023-06-21T16:46:44.543820+00:00\"]]}",
+            "meta": "",
             "courseware": "course.xml",
             "language": "",
             "location": "",
@@ -1140,7 +1140,6 @@ class CohortChangeRequestedWebFilter(PipelineStep):
           }
         }
 
-
     The webhook processor can return a json with two objects: data and exception.
 
     EXAMPLE::
@@ -1153,12 +1152,11 @@ class CohortChangeRequestedWebFilter(PipelineStep):
 
     All data keys are optionals, as well as the keys inside each.
 
-    Exceptions:
+    Exceptions::
 
         "exceptions": {
             "PreventCohortChange": <message>
         }
-
     """
 
     def run_filter(self, current_membership, target_cohort):  # pylint: disable=arguments-differ
@@ -1169,6 +1167,7 @@ class CohortChangeRequestedWebFilter(PipelineStep):
             current_membership (CohortMembership): edxapp object representing the user's cohort current membership
                 object.
             target_cohort (CourseUserGroup): edxapp object representing the new user's cohort.
+
         """
         event = "CohortChangeRequested"
 
@@ -1200,6 +1199,128 @@ class CohortChangeRequestedWebFilter(PipelineStep):
 
             return {
                 "current_membership": current_membership,
+                "target_cohort": target_cohort,
+            }
+
+        return None
+
+
+class CohortAssignmentRequestedWebFilter(PipelineStep):
+    """
+    Process CohortAssignmentRequested filter.
+
+    This filter is triggered when a user is about to be assigned to a cohort.
+
+    It will POST a json to the webhook url with the cohort object.
+
+    EXAMPLE::
+
+        {
+          "target_cohort": {
+            "id": 1,
+            "name": "Cohort test",
+            "course_id": "course-v1:edX+DemoX+Demo_Course",
+            "group_type": "cohort"
+          },
+          "user": {
+            "id": 4,
+            "password": "pbkdf2_sha256$****=",
+            "last_login": "2023-06-21 16:43:46.264292+00:00",
+            "is_superuser": true,
+            "username": "andres",
+            "first_name": "",
+            "last_name": "",
+            "email": "andres@aulasneo.com",
+            "is_staff": true,
+            "is_active": true,
+            "date_joined": "2023-01-26 16:22:57.939766+00:00"
+          },
+          "user_profile": {
+            "id": 2,
+            "user_id": 4,
+            "name": "John Doe",
+            "meta": "",
+            "courseware": "course.xml",
+            "language": "",
+            "location": "",
+            "year_of_birth": null,
+            "gender": null,
+            "level_of_education": null,
+            "mailing_address": null,
+            "city": null,
+            "country": null,
+            "state": null,
+            "goals": null,
+            "bio": null,
+            "profile_image_uploaded_at": null,
+            "phone_number": null
+          },
+          "course_key": "course-v1:edX+DemoX+Demo_Course",
+          "event_metadata": {
+            "event_type": "CohortChangeRequested",
+            "time": "2023-06-30 17:52:03.671230"
+          }
+        }
+
+    The webhook processor can return a json with two objects: data and exception.
+
+    EXAMPLE::
+
+        {
+            "data": {
+            ...
+            }
+        }
+
+    All data keys are optionals, as well as the keys inside each.
+
+    Exceptions::
+
+        "exceptions": {
+            "PreventCohortAssignment": <message>
+        }
+
+    Note: Currently the exception message is logged in the console but not shown to the user.
+
+    """
+
+    def run_filter(self, user, target_cohort):  # pylint: disable=arguments-differ
+        """
+        Execute a filter with the signature specified.
+
+        Arguments:
+            user (User): is a Django User object to be added in the cohort.
+            target_cohort (CourseUserGroup): edxapp object representing the new user's cohort.
+        """
+        event = "CohortAssignmentRequested"
+
+        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+
+        if webfilters:
+            logger.info(f"Webfilter for {event} event.")
+
+            user_profile = user.profile
+            course_key = target_cohort.course_id
+
+            data = {
+                "target_cohort": target_cohort,
+                "user": user,
+                "user_profile": user_profile,
+                "course_key": course_key
+            }
+
+            content, exceptions = _process_filter(webfilters=webfilters,
+                                                  data=data,
+                                                  exception=CohortAssignmentRequested.PreventCohortAssignment)
+
+            update_object(user, content.get('user'))
+            update_object(user.profile, content.get('user_profile'))
+            update_object(target_cohort, content.get('target_cohort'))
+
+            _check_for_exception(exceptions, CohortAssignmentRequested.PreventCohortAssignment)
+
+            return {
+                "user": user,
                 "target_cohort": target_cohort,
             }
 
