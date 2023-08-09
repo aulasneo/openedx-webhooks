@@ -98,11 +98,11 @@ class Webfilter(TimeStampedModel):
     .. no_pii:
     """
 
-    filter_list = (
-        (''.join(list(map(str.capitalize, filter.split('.')[3:-1]))),
-         ' '.join(list(map(str.capitalize, filter.split('.')[3:-1]))),)
+    filter_list = [
+        (''.join(list(map(str.capitalize, filter.replace('_', '.').split('.')[3:-1]))),
+         ' '.join(list(map(str.capitalize, filter.replace('_', '.').split('.')[3:-1]))),)
         for filter in filters
-    )
+    ]
 
     description = models.TextField(
         help_text="Description",
