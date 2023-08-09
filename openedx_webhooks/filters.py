@@ -30,6 +30,7 @@ from openedx_filters.learning.filters import (
     CertificateRenderStarted,
     CohortAssignmentRequested,
     CohortChangeRequested,
+    CourseAboutRenderStarted,
     CourseEnrollmentStarted,
     CourseUnenrollmentStarted,
     StudentLoginRequested,
@@ -42,6 +43,26 @@ from .utils import send
 logger = logging.getLogger(__name__)
 
 
+def fix_dict_keys(d: dict):
+    """
+    Remove dict keys from a dict.
+
+    This fixes a problem with course objects, for which vars(course) or course.__dict__ return a dict
+    which contains dicts as keys, and are therefore not json serializable.
+    We convert these dicts in place of keys, to their str representation.
+    """
+    # Initialize the response
+    r = {}
+    for k, v in d.items():
+        if isinstance(v, dict):
+            v = fix_dict_keys(v)
+        if type(k) not in [str, int, float]:
+            r[str(k)] = v
+        else:
+            r[k] = v
+    return r
+
+
 def _process_filter(webfilters, data, exception):
     """
     Process all events with user data.
@@ -52,9 +73,12 @@ def _process_filter(webfilters, data, exception):
     # Convert model objects to dicts, and remove '_state'
     payload = {}
     for key, value in data.items():
+
         if isinstance(value, models.Model):
             payload[key] = value.__dict__.copy()
             payload[key].pop('_state', None)
+        elif isinstance(value, dict):
+            payload[key] = fix_dict_keys(value)
         else:
             payload[key] = value
 
@@ -204,8 +228,11 @@ def _check_for_exception(exceptions, exception_class):
 
         # In the special case of CertificateRenderStarted.RenderCustomResponse the exception must include a
         # response object
-        if exception_class is CertificateRenderStarted.RenderCustomResponse:
-            raise CertificateRenderStarted.RenderCustomResponse(
+        if exception_class in [
+            CertificateRenderStarted.RenderCustomResponse,
+            CourseAboutRenderStarted.RenderCustomResponse,
+        ]:
+            raise exception_class(
                 message="Render Custom Response",
                 response=HttpResponse(**exception_settings))
 
@@ -1322,6 +1349,358 @@ class CohortAssignmentRequestedWebFilter(PipelineStep):
             return {
                 "user": user,
                 "target_cohort": target_cohort,
+            }
+
+        return None
+
+
+class CourseAboutRenderStartedWebFilter(PipelineStep):
+    r"""
+    Process CourseAboutRenderStarted filter.
+
+    This filter is triggered when the course about page is about to be rendered.
+
+    It will POST a json to the webhook url with the cohort object.
+
+    EXAMPLE::
+
+        {
+          "context": {
+            "course": {
+              "xmodule_runtime": null,
+              "_asides": [],
+              "_parent_block": null,
+              "_parent_block_id": null,
+              "_child_cache": {},
+              "_deprecated_per_instance_field_data": "",
+              "_field_data_cache": {
+                "wiki_slug": "edX.DemoX.Demo_Course",
+                "due_date_display_format": null,
+                "show_timezone": true,
+                "grading_policy": {
+                  "GRADER": [
+                    {
+                      "type": "Homework",
+                      "min_count": 3,
+                      "drop_count": 1,
+                      "short_label": "Ex",
+                      "weight": 0
+                    },
+                    {
+                      "type": "Exam",
+                      "min_count": 1,
+                      "drop_count": 0,
+                      "short_label": "",
+                      "weight": 0
+                    },
+                    {
+                      "type": "test",
+                      "min_count": 1,
+                      "drop_count": 0,
+                      "short_label": "",
+                      "weight": 1
+                    }
+                  ],
+                  "GRADE_CUTOFFS": {
+                    "Pass": 0.6
+                  }
+                },
+                "discussion_topics": {
+                  "General": {
+                    "id": "i4x-edx-eiorguegnru-course-foobarbaz"
+                  }
+                },
+                "tabs": [
+                  "<lms.djangoapps.courseware.tabs.CourseInfoTab object at 0x7f05c1f39100>",
+                  "<lms.djangoapps.courseware.tabs.CoursewareTab object at 0x7f05c1f390a0>",
+                  "<lms.djangoapps.discussion.plugins.DiscussionTab object at 0x7f05c1ec1400>",
+                  "<lms.djangoapps.course_wiki.tab.WikiTab object at 0x7f05c1ec1430>",
+                  "<lms.djangoapps.courseware.tabs.TextbookTabs object at 0x7f05c1ec1880>",
+                  "<lms.djangoapps.courseware.tabs.ProgressTab object at 0x7f05c1ec1940>",
+                  "<lms.djangoapps.courseware.tabs.DatesTab object at 0x7f05c1ec19a0>",
+                  "<lms.djangoapps.edxnotes.plugins.EdxNotesTab object at 0x7f05c1ec1ac0>"
+                ],
+                "enable_ccx": false,
+                "self_paced": true,
+                "parent": null,
+                "start": "2013-02-05 05:00:00+00:00",
+                "catalog_visibility": "both",
+                "end": "2023-02-01 00:00:00+00:00",
+                "certificate_available_date": null,
+                "certificates_display_behavior": "end",
+                "enrollment_start": null,
+                "enrollment_end": null,
+                "pre_requisite_courses": [],
+                "course_image": "images_course_image.jpg",
+                "static_asset_path": "",
+                "banner_image": "images_course_image.jpg",
+                "video_thumbnail_image": "images_course_image.jpg",
+                "language": null,
+                "learning_info": [],
+                "instructor_info": {
+                  "instructors": []
+                },
+                "license": null,
+                "course_edit_method": "Studio",
+                "cosmetic_display_price": 0,
+                "invitation_only": false,
+                "max_student_enrollments_allowed": null,
+                "enrollment_domain": null,
+                "course_visibility": "private"
+              },
+              "_dirty_fields": {
+                "<Dict grading_policy>": {
+                  "GRADER": [
+                    {
+                      "type": "Homework",
+                      "min_count": 3,
+                      "drop_count": 1,
+                      "short_label": "Ex",
+                      "weight": 0
+                    },
+                    {
+                      "type": "Exam",
+                      "min_count": 1,
+                      "drop_count": 0,
+                      "short_label": "",
+                      "weight": 0
+                    },
+                    {
+                      "type": "test",
+                      "min_count": 1,
+                      "drop_count": 0,
+                      "short_label": "",
+                      "weight": 1
+                    }
+                  ],
+                  "GRADE_CUTOFFS": {
+                    "Pass": 0.6
+                  }
+                },
+                "<Dict discussion_topics>": {
+                  "General": {
+                    "id": "i4x-edx-eiorguegnru-course-foobarbaz"
+                  }
+                },
+                "<CourseTabList tabs>": [
+                  "<lms.djangoapps.courseware.tabs.CourseInfoTab object at 0x7f05c1ec1dc0>",
+                  "<lms.djangoapps.courseware.tabs.CoursewareTab object at 0x7f05c1ec17c0>",
+                  "<lms.djangoapps.discussion.plugins.DiscussionTab object at 0x7f05c1ec1790>",
+                  "<lms.djangoapps.course_wiki.tab.WikiTab object at 0x7f05c1ec17f0>",
+                  "<lms.djangoapps.courseware.tabs.TextbookTabs object at 0x7f05c1ea8af0>",
+                  "<lms.djangoapps.courseware.tabs.ProgressTab object at 0x7f05c1ea8b80>",
+                  "<lms.djangoapps.courseware.tabs.DatesTab object at 0x7f05c1ea8c70>",
+                  "<lms.djangoapps.edxnotes.plugins.EdxNotesTab object at 0x7f05c1ea8ca0>"
+                ],
+                "<Reference parent>": null,
+                "<List pre_requisite_courses>": [],
+                "<List learning_info>": [],
+                "<Dict instructor_info>": {
+                  "instructors": []
+                }
+              },
+              "scope_ids": [
+                null,
+                "course",
+                "block-v1:edX+DemoX+Demo_Course+type@course+block@course",
+                "block-v1:edX+DemoX+Demo_Course+type@course+block@course"
+              ],
+              "_runtime": "",
+              "gated_sequence_paywall": null,
+              "_gating_prerequisites": null,
+              "syllabus_present": false,
+              "_grading_policy": {
+                "RAW_GRADER": [
+                  {
+                    "type": "Homework",
+                    "min_count": 3,
+                    "drop_count": 1,
+                    "short_label": "Ex",
+                    "weight": 0
+                  },
+                  {
+                    "type": "Exam",
+                    "min_count": 1,
+                    "drop_count": 0,
+                    "short_label": "",
+                    "weight": 0
+                  },
+                  {
+                    "type": "test",
+                    "min_count": 1,
+                    "drop_count": 0,
+                    "short_label": "",
+                    "weight": 1
+                  }
+                ],
+                "GRADE_CUTOFFS": {
+                  "Pass": 0.6
+                }
+              },
+              "_edited_by": 4,
+              "_edited_on": "2023-06-28 14:09:01.134000+00:00",
+              "previous_version": "648d078bcf0b4732adabe560",
+              "update_version": "649c3efdfdd296af28980306",
+              "source_version": "649c3efdfdd296af28980305",
+              "definition_locator": "def-v1:63d984b5f465aece32500e3a+type@course",
+              "course_version": "64b1a37eb74deb15b841b65e"
+            },
+            "course_details": {
+              "org": "edX",
+              "course_id": "DemoX",
+              "run": "Demo_Course",
+              "language": null,
+              "start_date": "2013-02-05 05:00:00+00:00",
+              "end_date": "2023-02-01 00:00:00+00:00",
+              "enrollment_start": null,
+              "enrollment_end": null,
+              "certificate_available_date": null,
+              "certificates_display_behavior": "end",
+              "syllabus": null,
+              "title": "",
+              "subtitle": "",
+              "duration": "",
+              "description": "",
+              "short_description": "",
+              "overview": "<section class=\"about\">\n   <h2>About This Course</h2>\n   ....",
+              "about_sidebar_html": "",
+              "intro_video": null,
+              "effort": null,
+              "license": null,
+              "course_image_name": "images_course_image.jpg",
+              "course_image_asset_path": "/asset-v1:edX+DemoX+Demo_Course+type@asset+block@images_course_image.jpg",
+              "banner_image_name": "images_course_image.jpg",
+              "banner_image_asset_path": "/asset-v1:edX+DemoX+Demo_Course+type@asset+block@images_course_image.jpg",
+              "video_thumbnail_image_name": "images_course_image.jpg",
+              "video_thumbnail_image_asset_path": "/asset-v1:edX+DemoX+Demo_Course+type@asset+block@image.jpg",
+              "pre_requisite_courses": [],
+              "entrance_exam_enabled": "",
+              "entrance_exam_id": "",
+              "entrance_exam_minimum_score_pct": "50",
+              "self_paced": true,
+              "learning_info": [],
+              "instructor_info": {
+                "instructors": []
+              }
+            },
+            "staff_access": true,
+            "studio_url": "//studio.local.overhang.io:8001/settings/details/course-v1:edX+DemoX+Demo_Course",
+            "registered": true,
+            "course_target": "http://apps.local.overhang.io:2000/learning/course/course-v1:edX+DemoX+Demo_Course/home",
+            "is_cosmetic_price_enabled": true,
+            "course_price": "Free",
+            "ecommerce_checkout": false,
+            "ecommerce_checkout_link": "",
+            "ecommerce_bulk_checkout_link": "",
+            "single_paid_mode": null,
+            "show_courseware_link": true,
+            "is_course_full": false,
+            "can_enroll": true,
+            "invitation_only": false,
+            "active_reg_button": false,
+            "is_shib_course": null,
+            "disable_courseware_header": true,
+            "pre_requisite_courses": [],
+            "course_image_urls": {
+              "raw": "/asset-v1:edX+DemoX+Demo_Course+type@asset+block@images_course_image.jpg",
+              "small": "/asset-v1:edX+DemoX+Demo_Course+type@asset+block@images_course_image.jpg",
+              "large": "/asset-v1:edX+DemoX+Demo_Course+type@asset+block@images_course_image.jpg"
+            },
+            "sidebar_html_enabled": false,
+            "allow_anonymous": "AccessResponse(False, None, None, None, None, None)"
+          },
+          "template_name": "courseware/course_about.html",
+          "event_metadata": {
+            "event_type": "CourseAboutRenderStarted",
+            "time": "2023-08-09 20:53:15.420093"
+          }
+        }
+
+    The webhook processor can return a json with two objects: data and exception.
+
+    EXAMPLE::
+
+        {
+            "data": {
+                "context": {
+                    "can_enroll": false
+                }
+            }
+        }
+
+    All data keys are optionals, as well as the keys inside each.
+    Note: course and course_details are for information only, they cannot be modified by the webfilter.
+
+    Exceptions::
+        {
+            "exception": {
+                "RedirectToPage": {
+                    "redirect_to": <URL to redirect>
+                }
+                "RenderCustomResponse": {
+                    "content": <html content>,
+                    "content_type": <MIME type. By default "text/html; charset=utf-8",
+                    "status": <HTTP status code. By default=200>,
+                    "reason": <HTTP response phrase. If not provided, a default phrase will be used.>,
+                    "charset": <If not given it will be extracted from content_type, and if that is unsuccessful,
+                        the DEFAULT_CHARSET setting will be used.>,
+                    "headers": <dict of HTTP headers>
+                }
+                "RenderInvalidCourseAbout": {
+                    "course_about_template": <template to render the standard invalid course about page>,
+                    "template_context": <context for rendering the template>
+                }
+            }
+        }
+
+    Note: Currently the exception message is logged in the console but not shown to the user.
+
+    """
+
+    def run_filter(self, context, template_name):  # pylint: disable=arguments-differ
+        """
+        Execute a filter with the signature specified.
+
+        Arguments:
+            context (dict): context dictionary for course about template.
+            template_name (str): template name to be rendered by the course about.
+        """
+        event = "CourseAboutRenderStarted"
+
+        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+
+        if webfilters:
+            logger.info(f"Webfilter for {event} event.")
+
+            course = context.get('course')
+            course_details = context.get('course_details')
+
+            # Convert the course and course_details objects to dicts
+            context_to_send = context.copy()
+            context_to_send['course'] = vars(course)
+            context_to_send['course_details'] = vars(course_details)
+
+            data = {
+                "context": context_to_send,
+                "template_name": template_name,
+            }
+
+            content, exceptions = _process_filter(webfilters=webfilters,
+                                                  data=data,
+                                                  exception=CourseAboutRenderStarted.RedirectToPage)
+
+            # The response data will have a course and a course_details objects that are immutable
+            if 'context' in content:
+                content['context'].update({'course': course})
+                content['context'].update({'course_details': course_details})
+
+            _check_for_exception(exceptions, CourseAboutRenderStarted.RedirectToPage)
+            _check_for_exception(exceptions, CourseAboutRenderStarted.RenderCustomResponse)
+            _check_for_exception(exceptions, CourseAboutRenderStarted.RenderInvalidCourseAbout)
+
+            return {
+                "context": content.get('context') or context,
+                "template_name": content.get('template_name') or template_name,
             }
 
         return None

@@ -59,4 +59,10 @@ def plugin_settings(settings):
                 "openedx_webhooks.filters.CohortAssignmentRequestedWebFilter"
             ]
         },
+        "org.openedx.learning.course_about.render.started.v1": {
+            "fail_silently": False,
+            "pipeline": [
+                "openedx_webhooks.filters.CourseAboutRenderStartedWebFilter"
+            ]
+        },
     }
