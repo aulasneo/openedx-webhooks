@@ -65,4 +65,10 @@ def plugin_settings(settings):
                 "openedx_webhooks.filters.CourseAboutRenderStartedWebFilter"
             ]
         },
+        "org.openedx.learning.dashboard.render.started.v1": {
+            "fail_silently": False,
+            "pipeline": [
+                "openedx_webhooks.filters.DashboardRenderStartedWebFilter"
+            ]
+        },
     }

@@ -33,6 +33,7 @@ from openedx_filters.learning.filters import (
     CourseAboutRenderStarted,
     CourseEnrollmentStarted,
     CourseUnenrollmentStarted,
+    DashboardRenderStarted,
     StudentLoginRequested,
     StudentRegistrationRequested,
 )
@@ -231,6 +232,7 @@ def _check_for_exception(exceptions, exception_class):
         if exception_class in [
             CertificateRenderStarted.RenderCustomResponse,
             CourseAboutRenderStarted.RenderCustomResponse,
+            DashboardRenderStarted.RenderCustomResponse
         ]:
             raise exception_class(
                 message="Render Custom Response",
@@ -1700,6 +1702,223 @@ class CourseAboutRenderStartedWebFilter(PipelineStep):
 
             return {
                 "context": content.get('context') or context,
+                "template_name": content.get('template_name') or template_name,
+            }
+
+        return None
+
+
+class DashboardRenderStartedWebFilter(PipelineStep):
+    """
+    Process DashboardRenderStarted filter.
+
+    This filter is triggered when the dashboard page is about to be rendered.
+
+    It will POST a json to the webhook url with the cohort object.
+
+    EXAMPLE::
+
+        {
+          "context": {
+            "urls": {},
+            "programs_data": {},
+            "enterprise_message": "",
+            "consent_required_courses": "set()",
+            "enrollment_message": null,
+            "redirect_message": "",
+            "account_activation_messages": [],
+            "activate_account_message": "",
+            "course_enrollments": [
+              "[CourseEnrollment] andres: course-v1:test+test+test (2023-02-14 14:49:26.692594+00:00); active: (True)",
+            ],
+            "course_entitlements": [],
+            "course_entitlement_available_sessions": {},
+            "unfulfilled_entitlement_pseudo_sessions": {},
+            "course_optouts": "<QuerySet []>",
+            "staff_access": true,
+            "errored_courses": {},
+            "show_courseware_links_for": {
+              "course-v1:test+test+test": "AccessResponse(True, None, None, None, None, None)",
+              "course-v1:edX+DemoX+Demo_Course": "AccessResponse(True, None, None, None, None, None)"
+            },
+            "all_course_modes": {
+              "course-v1:test+test+test": {
+                "show_upsell": false,
+                "days_for_upsell": null
+              },
+              "course-v1:edX+DemoX+Demo_Course": {
+                "show_upsell": false,
+                "days_for_upsell": null
+              }
+            },
+            "cert_statuses": {
+              "course-v1:test+test+test": {
+                "status": "downloadable",
+                "mode": "honor",
+                "linked_in_url": null,
+                "can_unenroll": false,
+                "show_survey_button": false,
+                "show_cert_web_view": true,
+                "cert_web_view_url": "/certificates/dea5907d215a4c15948059011c339e21",
+                "grade": "1.0"
+              },
+              "course-v1:edX+DemoX+Demo_Course": {
+                "status": "downloadable",
+                "mode": "honor",
+                "linked_in_url": null,
+                "can_unenroll": false,
+                "show_survey_button": false,
+                "show_cert_web_view": true,
+                "cert_web_view_url": "/certificates/cb0e2d268a894709889e0f9e2fe3bd4a",
+                "grade": "0.0"
+              }
+            },
+            "credit_statuses": {},
+            "show_email_settings_for": "frozenset({CourseLocator('edX', 'DemoX', 'Demo_Course', None, None)})",
+            "reverifications": {
+              "approved": [],
+              "denied": [],
+              "pending": [],
+              "must_reverify": []
+            },
+            "verification_display": true,
+            "verification_status": "none",
+            "verification_expiry": "",
+            "verification_status_by_course": {},
+            "verification_errors": [],
+            "denied_banner": false,
+            "billing_email": "info@aulasneo.com",
+            "show_account_activation_popup": null,
+            "user": "andres",
+            "logout_url": "/logout",
+            "platform_name": "Aulasneo DEV",
+            "enrolled_courses_either_paid": "frozenset()",
+            "enrolled_courses_voucher_refundable": "frozenset()",
+            "provider_states": [],
+            "courses_requirements_not_met": {},
+            "nav_hidden": true,
+            "inverted_programs": {},
+            "show_program_listing": false,
+            "show_dashboard_tabs": true,
+            "disable_courseware_js": true,
+            "display_course_modes_on_dashboard": false,
+            "display_sidebar_account_activation_message": false,
+            "display_dashboard_courses": true,
+            "empty_dashboard_message": null,
+            "recovery_email_message": null,
+            "recovery_email_activation_message": null,
+            "show_load_all_courses_link": false,
+            "course_info": null,
+            "plugins": {},
+            "user_metadata": {
+              "username": "andres",
+              "user_id": 4,
+              "course_id": null,
+              "course_display_name": null,
+              "enrollment_mode": null,
+              "upgrade_link": null,
+              "upgrade_price": null,
+              "audit_access_deadline": null,
+              "course_duration": null,
+              "pacing_type": null,
+              "has_staff_access": null,
+              "forum_roles": null,
+              "partition_groups": null,
+              "has_non_audit_enrollments": null,
+              "program_key_fields": null,
+              "email": "andres@aulasneo.com",
+              "schedule_start": null,
+              "enrollment_time": null,
+              "course_start": null,
+              "course_end": null,
+              "dynamic_upgrade_deadline": null,
+              "course_upgrade_deadline": null
+            },
+            "resume_button_urls": [
+              "/courses/course-v1:test+test+test/jump_to/block-v1:test+test+test+type@problem+block@e82xx",
+              "/courses/course-v1:edX+DemoX+Demo_Course/jump_to/block-v1:edX+DemoX+Demo_Course+type@html+block@829xxx"
+            ]
+          },
+          "template_name": "dashboard.html",
+          "event_metadata": {
+            "event_type": "DashboardRenderStarted",
+            "time": "2023-08-14 22:30:32.013894"
+          }
+        }
+
+    The webhook processor can return a json with two objects: data and exception.
+
+    EXAMPLE::
+
+        {
+            "data": {
+                "context": {
+                    "can_enroll": false
+                }
+            }
+        }
+
+    All data keys are optionals, as well as the keys inside each.
+    Note: course and course_details are for information only, they cannot be modified by the webfilter.
+
+    Exceptions::
+        {
+            "exception": {
+                "RedirectToPage": {
+                    "redirect_to": <URL to redirect>
+                }
+                "RenderCustomResponse": {
+                    "content": <html content>,
+                    "content_type": <MIME type. By default "text/html; charset=utf-8",
+                    "status": <HTTP status code. By default=200>,
+                    "reason": <HTTP response phrase. If not provided, a default phrase will be used.>,
+                    "charset": <If not given it will be extracted from content_type, and if that is unsuccessful,
+                        the DEFAULT_CHARSET setting will be used.>,
+                    "headers": <dict of HTTP headers>
+                }
+                "RenderInvalidCourseAbout": {
+                    "course_about_template": <template to render the standard invalid course about page>,
+                    "template_context": <context for rendering the template>
+                }
+            }
+        }
+
+    Note: Currently the exception message is logged in the console but not shown to the user.
+
+    """
+
+    def run_filter(self, context, template_name):  # pylint: disable=arguments-differ
+        """
+        Execute a filter with the signature specified.
+
+        Arguments:
+            context (dict): context dictionary for course about template.
+            template_name (str): template name to be rendered by the course about.
+        """
+        event = "DashboardRenderStarted"
+
+        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+
+        if webfilters:
+            logger.info(f"Webfilter for {event} event.")
+
+            data = {
+                "context": context,
+                "template_name": template_name,
+            }
+
+            content, exceptions = _process_filter(webfilters=webfilters,
+                                                  data=data,
+                                                  exception=DashboardRenderStarted.RedirectToPage)
+
+            context.update(content.get('context'))
+
+            _check_for_exception(exceptions, DashboardRenderStarted.RedirectToPage)
+            _check_for_exception(exceptions, DashboardRenderStarted.RenderCustomResponse)
+            _check_for_exception(exceptions, DashboardRenderStarted.RenderInvalidDashboard)
+
+            return {
+                "context": context,
                 "template_name": content.get('template_name') or template_name,
             }
 
