@@ -39,8 +39,6 @@ filters = [
     "org.openedx.learning.cohort.assignment.requested.v1",
     "org.openedx.learning.course_about.render.started.v1",
     "org.openedx.learning.dashboard.render.started.v1",
-    "org.openedx.learning.veritical_block_child.render.started.v1",
-    "org.openedx.learning.veritical_block.render.completed.v1",
 ]
 
 
