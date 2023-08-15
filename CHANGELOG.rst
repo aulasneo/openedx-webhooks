@@ -1,6 +1,34 @@
 Change Log
 ##########
 
+Unreleased
+**********************************************
+
+* Added webfilters:
+    * CertificateCreationRequested,
+    * CertificateRenderStarted,
+    * CohortAssignmentRequested,
+    * CohortChangeRequested,
+    * CourseAboutRenderStarted,
+    * CourseEnrollmentStarted,
+    * CourseUnenrollmentStarted,
+    * DashboardRenderStarted,
+    * StudentLoginRequested,
+    * StudentRegistrationRequested,
+
+* Available webhooks:
+    * SESSION_LOGIN_COMPLETED
+    * STUDENT_REGISTRATION_COMPLETED
+    * COURSE_ENROLLMENT_CREATED
+    * COURSE_ENROLLMENT_CHANGED
+    * COURSE_UNENROLLMENT_COMPLETED
+    * CERTIFICATE_CREATED
+    * CERTIFICATE_CHANGED
+    * CERTIFICATE_REVOKED
+    * COHORT_MEMBERSHIP_CHANGED
+    * COURSE_DISCUSSIONS_CHANGED
+
+
 Version 0.2.1 (2023-06-06)
 **********************************************
 
