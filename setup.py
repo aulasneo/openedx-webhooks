@@ -105,9 +105,9 @@ setup(
     version=VERSION,
     description="""Webhooks for Open edX""",
     long_description=README + '\n\n' + CHANGELOG,
-    author='edX',
-    author_email='oscm@edx.org',
-    url='https://github.com/openedx/openedx-webhooks',
+    author='Aulasneo',
+    author_email='andres@aulasneo.com',
+    url='https://github.com/aulasneo/openedx-webhooks',
     packages=find_packages(
         exclude=["*tests"],
     ),
@@ -117,7 +117,7 @@ setup(
     python_requires=">=3.8",
     license="AGPL 3.0",
     zip_safe=False,
-    keywords='Python edx',
+    keywords='Openedx webhooks',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Framework :: Django',
