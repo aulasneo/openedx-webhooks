@@ -363,7 +363,7 @@ class StudentLoginRequestedWebFilter(PipelineStep):
 
             return {"user": user}
 
-        return None
+        return {}
 
 
 class StudentRegistrationRequestedWebFilter(PipelineStep):
@@ -487,7 +487,7 @@ class StudentRegistrationRequestedWebFilter(PipelineStep):
 
             return {"form_data": updated_form_data}
 
-        return None
+        return {}
 
 
 class CourseEnrollmentStartedWebFilter(PipelineStep):
@@ -615,7 +615,7 @@ class CourseEnrollmentStartedWebFilter(PipelineStep):
                 "mode": mode,
             }
 
-        return None
+        return {}
 
 
 class CourseUnenrollmentStartedWebFilter(PipelineStep):
@@ -728,7 +728,7 @@ class CourseUnenrollmentStartedWebFilter(PipelineStep):
                 "enrollment": enrollment,
             }
 
-        return None
+        return {}
 
 
 class CertificateCreationRequestedWebFilter(PipelineStep):
@@ -890,7 +890,7 @@ class CertificateCreationRequestedWebFilter(PipelineStep):
                 "generation_mode": generation_mode,
             }
 
-        return None
+        return {}
 
 
 class CertificateRenderStartedWebFilter(PipelineStep):
@@ -1103,7 +1103,7 @@ class CertificateRenderStartedWebFilter(PipelineStep):
                 "custom_template": custom_template,
             }
 
-        return None
+        return {}
 
 
 class CohortChangeRequestedWebFilter(PipelineStep):
@@ -1231,7 +1231,7 @@ class CohortChangeRequestedWebFilter(PipelineStep):
                 "target_cohort": target_cohort,
             }
 
-        return None
+        return {}
 
 
 class CohortAssignmentRequestedWebFilter(PipelineStep):
@@ -1353,7 +1353,7 @@ class CohortAssignmentRequestedWebFilter(PipelineStep):
                 "target_cohort": target_cohort,
             }
 
-        return None
+        return {}
 
 
 class CourseAboutRenderStartedWebFilter(PipelineStep):
@@ -1705,7 +1705,7 @@ class CourseAboutRenderStartedWebFilter(PipelineStep):
                 "template_name": content.get('template_name') or template_name,
             }
 
-        return None
+        return {}
 
 
 class DashboardRenderStartedWebFilter(PipelineStep):
@@ -1922,4 +1922,4 @@ class DashboardRenderStartedWebFilter(PipelineStep):
                 "template_name": content.get('template_name') or template_name,
             }
 
-        return None
+        return {}
