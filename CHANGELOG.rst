@@ -1,7 +1,7 @@
 Change Log
 ##########
 
-Unreleased
+Version 1.0.2 (2025-04-07)
 **********************************************
 
 * Fix: return {} in run_filter
