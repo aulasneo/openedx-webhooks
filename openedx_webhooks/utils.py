@@ -42,13 +42,3 @@ def flatten_dict(dictionary, parent_key="", sep="_"):
             items.append((new_key, str(value)))
     return dict(items)
 
-
-def serialize_course_key(inst, field, value):  # pylint: disable=unused-argument
-    """
-    Serialize instances of CourseLocator.
-
-    When value is anything else returns it without modification.
-    """
-    if isinstance(value, CourseLocator):
-        return str(value)
-    return value
