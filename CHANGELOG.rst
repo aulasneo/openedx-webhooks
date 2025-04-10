@@ -1,6 +1,12 @@
 Change Log
 ##########
 
+Unreleased
+**********************************************
+
+* Fix: Fix return value of all filters
+* Feat: Add new filters and receivers for Redwood
+
 Version 1.0.2 (2025-04-07)
 **********************************************
 

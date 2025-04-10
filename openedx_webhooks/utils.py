@@ -4,9 +4,11 @@ Utilities used by Open edX Events Receivers.
 import json
 import logging
 from collections.abc import MutableMapping
+from typing import Any, Union
 
 import requests
-from opaque_keys.edx.locator import CourseLocator
+from opaque_keys import OpaqueKey
+from xblock.fields import ScopeIds  # pylint: disable=import-error
 
 logger = logging.getLogger(__name__)
 
@@ -43,12 +45,55 @@ def flatten_dict(dictionary, parent_key="", sep="_"):
     return dict(items)
 
 
-def serialize_course_key(inst, field, value):  # pylint: disable=unused-argument
+def value_serializer(inst, field, value):  # pylint: disable=unused-argument
     """
-    Serialize instances of CourseLocator.
+    Serialize values for attr function.
+    """
+    return object_serializer(value)
 
-    When value is anything else returns it without modification.
+
+def scope_ids_serializer(o):
     """
-    if isinstance(value, CourseLocator):
-        return str(value)
-    return value
+    Serialize instances of ScopeId.
+    """
+    return {
+        "block_type": o.block_type,
+        "def_id": str(o.def_id),
+        "usage_id": str(o.usage_id),
+        "user_id": o.user_id,
+    }
+
+
+def object_serializer(o, depth=0) -> Union[dict, Any]:
+    """
+    Serialize an arbitrary object as a json-serializable dict.
+    """
+    if depth > 15:
+        return "! Depth limit reached !"
+    # First serialize scalar objects
+    if isinstance(o, (int, float,  str)) or o is None:
+        return o
+    # ScopeIds is a class present in block structures
+    elif isinstance(o, ScopeIds):
+        return scope_ids_serializer(o)
+    elif isinstance(o, OpaqueKey):
+        return str(o)
+    if isinstance(o, (list, tuple, set)):
+        return [object_serializer(item, depth + 1) for item in o]
+    # Now serialize dict-like objects
+    return_value = {}
+    if isinstance(o, dict):
+        dict_values = o.copy()
+    elif hasattr(o, "__dict__"):
+        dict_values = o.__dict__.copy()
+    # if it is not a dict and cannot be converted to a dict, try to stringify it.
+    elif hasattr(o, "__str__"):
+        return str(o)
+    else:
+        return f"Unserializable {type(o)}"
+    for key, value in dict_values.items():
+        if isinstance(key, str):
+            # Hide the private fields
+            if not key.startswith("_"):
+                return_value[key] = object_serializer(value, depth + 1)
+    return return_value

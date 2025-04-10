@@ -8,3 +8,4 @@ edx_opaque_keys # CourseLocator to serialize course keys
 requests    # To call the webhook urls
 edx-sphinx-theme # To compile documents
 openedx-filters # Base classes for openedx filters
+xblock

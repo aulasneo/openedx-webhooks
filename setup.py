@@ -2,11 +2,14 @@
 """
 Package metadata for openedx_webhooks.
 """
+import io
 import os
 import re
 import sys
 
 from setuptools import find_packages, setup
+
+HERE = os.path.abspath(os.path.dirname(__file__))
 
 
 def get_version(*file_paths):
@@ -97,14 +100,19 @@ if sys.argv[-1] == 'tag':
     os.system("git push --tags")
     sys.exit()
 
-README = open(os.path.join(os.path.dirname(__file__), 'README.rst'), encoding="utf8").read()
-CHANGELOG = open(os.path.join(os.path.dirname(__file__), 'CHANGELOG.rst'), encoding="utf8").read()
+
+def load_readme():
+    """Load the README file."""
+    with io.open(os.path.join(HERE, "README.rst"), "rt", encoding="utf8") as f:
+        return f.read()
+
 
 setup(
     name='openedx_webhooks',
     version=VERSION,
     description="""Webhooks for Open edX""",
-    long_description=README + '\n\n' + CHANGELOG,
+    long_description=load_readme(),
+    long_description_content_type="text/x-rst",
     author='Aulasneo',
     author_email='andres@aulasneo.com',
     url='https://github.com/aulasneo/openedx-webhooks',

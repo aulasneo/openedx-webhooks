@@ -178,6 +178,33 @@ and the `filters documentation`_
 .. _filters documentation: https://github.com/openedx/edx-platform/blob/master/docs/guides/hooks/filters.rst
 
 
+Adding more filters
+-------------------
+
+From version to version new filters are added to Open edX.
+The complete list of filters and their definition can be found in filters.py at
+the `openedx-filter repo`_.
+
+.. _openedx-filter repo: https://github.com/openedx/openedx-filters/blob/main/openedx_filters/learning/filters.py
+
+To add a new filter, create the filter class handler in ``filters.py``
+containing the ``run_filter`` function. Then add a block in ``common.py``
+linking the signal identifier with the function. Remember that ``run_filter``
+must always return a dict (which can be empty).
+
+Adding new event hooks
+----------------------
+
+From version to version new event producers are added to Open edX.
+The complete list of events and their definition can be found in ``signals.py``
+in different folders at the `openedx-events repo`_,
+depending on their category.
+
+.. _openedx-events repo: https://github.com/openedx/openedx-events/tree/main/openedx_events
+
+To add a new event hook, add the signal to the ``signals`` dict in ``apps.py``.
+Then add the corresponding block to ``receivers.py``.
+
 One Time Setup
 --------------
 .. code-block::
@@ -268,61 +295,39 @@ Contributing
 ************
 
 Contributions are very welcome.
-Please read `How To Contribute <https://openedx.org/r/how-to-contribute>`_ for details.
-
-This project is currently accepting all types of contributions, bug fixes,
-security fixes, maintenance work, or new features.  However, please make sure
-to have a discussion about your new feature idea with the maintainers prior to
-beginning development to maximize the chances of your change being accepted.
-You can start a conversation by creating a new issue on this repo summarizing
-your idea.
-
-The Open edX Code of Conduct
-****************************
-
-All community members are expected to follow the `Open edX Code of Conduct`_.
-
-.. _Open edX Code of Conduct: https://openedx.org/code-of-conduct/
-
-People
-******
-
-The assigned maintainers for this component and other project details may be
-found in `Backstage`_. Backstage pulls this data from the ``catalog-info.yaml``
-file in this repo.
-
-.. _Backstage: https://backstage.openedx.org/catalog/default/component/webhooks
+If you want to contribute to this project, please feel free to open an issue.
 
 Reporting Security Issues
 *************************
 
-Please do not report security issues in public. Please email security@tcril.org.
+Please do not report security issues in public.
+Please email `operations@aulasneo.com <mailto:operations@aulasneo.com>`_.
 
-.. |pypi-badge| image:: https://img.shields.io/pypi/v/webhooks.svg
-    :target: https://pypi.python.org/pypi/webhooks/
+.. |pypi-badge| image:: https://img.shields.io/pypi/v/openedx-webhooks.svg
+    :target: https://pypi.python.org/pypi/openedx-webhooks/
     :alt: PyPI
 
-.. |ci-badge| image:: https://github.com/openedx/webhooks/workflows/Python%20CI/badge.svg?branch=main
-    :target: https://github.com/openedx/webhooks/actions
+.. |ci-badge| image:: https://github.com/aulasneo/openedx-webhooks/workflows/Python%20CI/badge.svg?branch=master
+    :target: https://github.com/aulasneo/openedx-webhooks/actions
     :alt: CI
 
-.. |codecov-badge| image:: https://codecov.io/github/openedx/webhooks/coverage.svg?branch=main
-    :target: https://codecov.io/github/openedx/webhooks?branch=main
+.. |codecov-badge| image:: https://codecov.io/github/aulasneo/openedx-webhooks/coverage.svg?branch=main
+    :target: https://codecov.io/github/aulasneo/openedx-webhooks?branch=master
     :alt: Codecov
 
-.. |doc-badge| image:: https://readthedocs.org/projects/webhooks/badge/?version=latest
-    :target: https://docs.openedx.org/projects/webhooks
+.. |doc-badge| image:: https://readthedocs.org/projects/openedx-webhooks/badge/?version=latest
+    :target: https://github.com/aulasneo/openedx-webhooks
     :alt: Documentation
 
-.. |pyversions-badge| image:: https://img.shields.io/pypi/pyversions/webhooks.svg
-    :target: https://pypi.python.org/pypi/webhooks/
+.. |pyversions-badge| image:: https://img.shields.io/pypi/pyversions/openedx-webhooks.svg
+    :target: https://pypi.python.org/pypi/openedx-webhooks/
     :alt: Supported Python versions
 
-.. |license-badge| image:: https://img.shields.io/github/license/openedx/webhooks.svg
-    :target: https://github.com/openedx/webhooks/blob/main/LICENSE.txt
+.. |license-badge| image:: https://img.shields.io/github/license/aulasneo/openedx-webhooks.svg
+    :target: https://github.com/aulasneo/openedx-webhooks/blob/master/LICENSE.txt
     :alt: License
 
-.. |status-badge| image:: https://img.shields.io/badge/Status-Experimental-yellow
-.. .. |status-badge| image:: https://img.shields.io/badge/Status-Maintained-brightgreen
+.. .. |status-badge| image:: https://img.shields.io/badge/Status-Experimental-yellow
+.. |status-badge| image:: https://img.shields.io/badge/Status-Maintained-brightgreen
 .. .. |status-badge| image:: https://img.shields.io/badge/Status-Deprecated-orange
 .. .. |status-badge| image:: https://img.shields.io/badge/Status-Unsupported-red
