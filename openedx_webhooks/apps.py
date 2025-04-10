@@ -64,10 +64,11 @@ signals = {
     "CCX_COURSE_PASSING_STATUS_UPDATED": "openedx_events.learning.ccx.course.passing.status.updated.v1",
     "BADGE_AWARDED": "openedx_events.learning.badge.awarded.v1",
     "BADGE_REVOKED": "openedx_events.learning.badge.revoked.v1",
-    "IDV_ATTEMPT_CREATED": "openedx_events.learning.idv_attempt.created.v1",
-    "IDV_ATTEMPT_PENDING": "openedx_events.learning.idv_attempt.pending.v1",
-    "IDV_ATTEMPT_APPROVED": "openedx_events.learning.idv_attempt.approved.v1",
-    "IDV_ATTEMPT_DENIED": "openedx_events.learning.idv_attempt.denied.v1",
+
+    # "IDV_ATTEMPT_CREATED": "openedx_events.learning.idv_attempt.created.v1",
+    # "IDV_ATTEMPT_PENDING": "openedx_events.learning.idv_attempt.pending.v1",
+    # "IDV_ATTEMPT_APPROVED": "openedx_events.learning.idv_attempt.approved.v1",
+    # "IDV_ATTEMPT_DENIED": "openedx_events.learning.idv_attempt.denied.v1",
 }
 
 logger = logging.getLogger(__name__)

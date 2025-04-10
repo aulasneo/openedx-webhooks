@@ -126,29 +126,29 @@ def plugin_settings(settings):
                 "openedx_webhooks.filters.ORASubmissionViewRenderStartedWebFilter"
             ]
         },
-        "org.openedx.learning.idv.page.url.requested.v1": {
-            "fail_silently": False,
-            "pipeline": [
-                "openedx_webhooks.filters.IDVPageURLRequestedWebFilter"
-            ]
-        },
-        "org.openedx.learning.course_about.page.url.requested.v1": {
-            "fail_silently": False,
-            "pipeline": [
-                "openedx_webhooks.filters.CourseAboutPageURLRequestedWebFilter"
-            ]
-        },
-        "org.openedx.learning.schedule.queryset.requested.v1": {
-            "fail_silently": False,
-            "pipeline": [
-                "openedx_webhooks.filters.ScheduleQuerySetRequestedWebFilter"
-            ]
-        },
-        "org.openedx.content_authoring.lms.page.url.requested.v1": {
-            "fail_silently": False,
-            "pipeline": [
-                "openedx_webhooks.filters.LMSPageURLRequestedWebFilter"
-            ]
-        },
+        # "org.openedx.learning.idv.page.url.requested.v1": {
+        #     "fail_silently": False,
+        #     "pipeline": [
+        #         "openedx_webhooks.filters.IDVPageURLRequestedWebFilter"
+        #     ]
+        # },
+        # "org.openedx.learning.course_about.page.url.requested.v1": {
+        #     "fail_silently": False,
+        #     "pipeline": [
+        #         "openedx_webhooks.filters.CourseAboutPageURLRequestedWebFilter"
+        #     ]
+        # },
+        # "org.openedx.learning.schedule.queryset.requested.v1": {
+        #     "fail_silently": False,
+        #     "pipeline": [
+        #         "openedx_webhooks.filters.ScheduleQuerySetRequestedWebFilter"
+        #     ]
+        # },
+        # "org.openedx.content_authoring.lms.page.url.requested.v1": {
+        #     "fail_silently": False,
+        #     "pipeline": [
+        #         "openedx_webhooks.filters.LMSPageURLRequestedWebFilter"
+        #     ]
+        # },
 
     }
