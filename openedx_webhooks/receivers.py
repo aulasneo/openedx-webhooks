@@ -6,7 +6,7 @@ import logging
 from attrs import asdict
 
 from .models import Webhook
-from .utils import send
+from .utils import send, value_serializer
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ def _process_event(event_name, data, **kwargs):
         logger.info(f"{event_name} webhook triggered to {webhook.webhook_url}")
 
         payload = {
-            data_type: asdict(data, value_serializer=str),
+            data_type: asdict(data, value_serializer=value_serializer),
             'event_metadata': asdict(kwargs.get("metadata")),
         }
         logger.warning(payload)
