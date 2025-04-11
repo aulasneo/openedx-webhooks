@@ -12,34 +12,19 @@ usage:          Django models for Open edX signals webhooks
 from django.db import models
 from django.utils.translation import gettext as _
 from model_utils.models import TimeStampedModel
+from .apps import signals
+from settings.common import plugin_settings
 
-signals = [
-    "STUDENT_REGISTRATION_COMPLETED",
-    "SESSION_LOGIN_COMPLETED",
-    "COURSE_ENROLLMENT_CREATED",
-    "COURSE_ENROLLMENT_CHANGED",
-    "COURSE_UNENROLLMENT_COMPLETED",
-    "CERTIFICATE_CREATED",
-    "CERTIFICATE_CHANGED",
-    "CERTIFICATE_REVOKED",
-    "COHORT_MEMBERSHIP_CHANGED",
-    "COURSE_DISCUSSIONS_CHANGED",
-    # "PERSISTENT_GRADE_SUMMARY_CHANGED",
-]
 
 # From https://github.com/openedx/edx-platform/blob/master/docs/guides/hooks/filters.rst#index-of-filters
-filters = [
-    "org.openedx.learning.student.registration.requested.v1",
-    "org.openedx.learning.student.login.requested.v1",
-    "org.openedx.learning.course.enrollment.started.v1",
-    "org.openedx.learning.course.unenrollment.started.v1",
-    "org.openedx.learning.certificate.creation.requested.v1",
-    "org.openedx.learning.certificate.render.started.v1",
-    "org.openedx.learning.cohort.change.requested.v1",
-    "org.openedx.learning.cohort.assignment.requested.v1",
-    "org.openedx.learning.course_about.render.started.v1",
-    "org.openedx.learning.dashboard.render.started.v1",
-]
+class Fake_settings:
+    OPEN_EDX_FILTERS_CONFIG = {}
+
+fake_settings = Fake_settings()
+
+plugin_settings(fake_settings)
+
+filters = [key for key in fake_settings.OPEN_EDX_FILTERS_CONFIG]
 
 
 class Webhook(TimeStampedModel):
@@ -49,10 +34,14 @@ class Webhook(TimeStampedModel):
     .. no_pii:
     """
 
+    signal_list = []
+    for signal_app in signals:
+        signal_list += signals[signal_app]
+
     # Create a set of pairs like ("COURSE_ENROLLMENT_CREATED", "Course enrollment created")...
     event_list = (
         (signal,
-         signal[0] + signal[1:].lower().replace("_", " ")) for signal in signals
+         signal.capitalize().replace("_", " ")) for signal in signal_list
     )
 
     event = models.CharField(

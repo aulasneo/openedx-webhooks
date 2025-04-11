@@ -44,10 +44,10 @@ from openedx_filters.learning.filters import (
     CourseEnrollmentAPIRenderStarted,
     CourseRunAPIRenderStarted,
     InstructorDashboardRenderStarted,
-    ORASubmissionViewRenderStarted,
-    IDVPageURLRequested,
-    CourseAboutPageURLRequested,
-    ScheduleQuerySetRequested,
+    # ORASubmissionViewRenderStarted,
+    # IDVPageURLRequested,
+    # CourseAboutPageURLRequested,
+    # ScheduleQuerySetRequested,
 )
 
 from .models import Webfilter

@@ -84,12 +84,12 @@ def plugin_settings(settings):
                 "openedx_webhooks.filters.CourseEnrollmentQuerysetRequestedWebFilter"
             ]
         },
-        "org.openedx.learning.xblock.render.started.v1": {
-            "fail_silently": False,
-            "pipeline": [
-                "openedx_webhooks.filters.RenderXBlockStartedWebFilter"
-            ]
-        },
+        # "org.openedx.learning.xblock.render.started.v1": {
+        #     "fail_silently": False,
+        #     "pipeline": [
+        #         "openedx_webhooks.filters.RenderXBlockStartedWebFilter"
+        #     ]
+        # },
         "org.openedx.learning.vertical_block.render.completed.v1": {
             "fail_silently": False,
             "pipeline": [
