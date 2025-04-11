@@ -13,7 +13,7 @@ from django.db import models
 from django.utils.translation import gettext as _
 from model_utils.models import TimeStampedModel
 from .apps import signals
-from settings.common import plugin_settings
+from .settings.common import plugin_settings
 
 
 # From https://github.com/openedx/edx-platform/blob/master/docs/guides/hooks/filters.rst#index-of-filters
