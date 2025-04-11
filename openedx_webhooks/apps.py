@@ -7,7 +7,7 @@ from django.apps import AppConfig
 
 # Declare all signals
 signals = {
-    "course_authoring": [
+    "content_authoring": [
         "COURSE_CATALOG_INFO_CHANGED",
         "XBLOCK_CREATED",
         "XBLOCK_UPDATED",
