@@ -5,7 +5,7 @@ Common Pluggable Django App settings.
 """
 
 
-def plugin_settings(settings):
+def plugin_settings(s):
     """
     Declare all filters and their handlers.
     """
@@ -154,7 +154,7 @@ def plugin_settings(settings):
     }
 
     for key in filters_config:
-        if key in settings.OPEN_EDX_FILTERS_CONFIG:
-            settings.OPEN_EDX_FILTERS_CONFIG[key]['pipeline'] += filters_config[key]['pipeline']
+        if key in s.OPEN_EDX_FILTERS_CONFIG:
+            s.OPEN_EDX_FILTERS_CONFIG[key]['pipeline'] += filters_config[key]['pipeline']
         else:
-            settings.OPEN_EDX_FILTERS_CONFIG[key] = filters_config[key]
+            s.OPEN_EDX_FILTERS_CONFIG[key] = filters_config[key]
