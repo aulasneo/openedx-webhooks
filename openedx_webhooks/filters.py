@@ -38,7 +38,7 @@ from openedx_filters.learning.filters import (
     StudentRegistrationRequested,
     VerticalBlockChildRenderStarted,
     CourseEnrollmentQuerysetRequested,
-    RenderXBlockStarted,
+    # RenderXBlockStarted,
     VerticalBlockRenderCompleted,
     CourseHomeUrlCreationStarted,
     CourseEnrollmentAPIRenderStarted,
