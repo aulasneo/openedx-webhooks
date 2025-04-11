@@ -1102,10 +1102,7 @@ class CertificateRenderStartedWebFilter(PipelineStep):
             _check_for_exception(exceptions, CertificateRenderStarted.RenderAlternativeInvalidCertificate)
             _check_for_exception(exceptions, CertificateRenderStarted.RenderCustomResponse)
 
-        return {
-            "context": context,
-            "custom_template": custom_template,
-        }
+        return {}
 
 
 class CohortChangeRequestedWebFilter(PipelineStep):
