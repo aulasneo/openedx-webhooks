@@ -10,7 +10,7 @@ def plugin_settings(settings):
     Declare all filters and their handlers.
     """
 
-    settings.OPEN_EDX_FILTERS_CONFIG = {
+    filters_config = {
         "org.openedx.learning.student.login.requested.v1": {
             "fail_silently": False,
             "pipeline": [
@@ -152,3 +152,9 @@ def plugin_settings(settings):
         # },
 
     }
+
+    for key in filters_config:
+        if key in settings.OPEN_EDX_FILTERS_CONFIG:
+            settings.OPEN_EDX_FILTERS_CONFIG[key]['pipeline'] += filters_config[key]['pipeline']
+        else:
+            settings.OPEN_EDX_FILTERS_CONFIG[key] = filters_config[key]
