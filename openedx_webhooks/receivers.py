@@ -138,6 +138,12 @@ def course_discussions_changed_receiver(configuration, **kwargs):
     _process_event("COURSE_DISCUSSIONS_CHANGED", configuration, **kwargs)
 
 
+def program_certificate_awareded_receiver(data, **kwargs):
+    _process_event("PROGRAM_CERTIFICATE_AWARDED", data, **kwargs)
+
+def program_certificate_revoked_receiver(data, **kwargs):
+    _process_event("PROGRAM_CERTIFICATE_REVOKED", data, **kwargs)
+
 def persistent_grade_summary_changed_receiver(data, **kwargs):
     _process_event("PERSISTENT_GRADE_SUMMARY_CHANGED", data, **kwargs)
 
