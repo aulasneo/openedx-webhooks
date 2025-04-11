@@ -373,7 +373,9 @@ class StudentLoginRequestedWebFilter(PipelineStep):
 
             _check_for_exception(exceptions, StudentLoginRequested.PreventLogin)
 
-        return {"user": user}
+            return {"user": user}
+
+        return {}
 
 
 class StudentRegistrationRequestedWebFilter(PipelineStep):
@@ -497,7 +499,7 @@ class StudentRegistrationRequestedWebFilter(PipelineStep):
 
             return {"form_data": updated_form_data}
 
-        return {"form_data": form_data}
+        return {}
 
 
 class CourseEnrollmentStartedWebFilter(PipelineStep):
@@ -619,11 +621,13 @@ class CourseEnrollmentStartedWebFilter(PipelineStep):
 
             _check_for_exception(exceptions, CourseEnrollmentStarted.PreventEnrollment)
 
-        return {
-            "user": user,
-            "course_key": course_key,
-            "mode": mode,
-        }
+            return {
+                "user": user,
+                "course_key": course_key,
+                "mode": mode,
+            }
+
+        return {}
 
 
 class CourseUnenrollmentStartedWebFilter(PipelineStep):
@@ -732,9 +736,11 @@ class CourseUnenrollmentStartedWebFilter(PipelineStep):
 
             _check_for_exception(exceptions, CourseUnenrollmentStarted.PreventUnenrollment)
 
-        return {
-            "enrollment": enrollment,
-        }
+            return {
+                "enrollment": enrollment,
+            }
+
+        return {}
 
 
 class CertificateCreationRequestedWebFilter(PipelineStep):
@@ -887,14 +893,16 @@ class CertificateCreationRequestedWebFilter(PipelineStep):
 
             _check_for_exception(exceptions, CertificateCreationRequested.PreventCertificateCreation)
 
-        return {
-            "user": user,
-            "course_key": course_key,
-            "mode": mode,
-            "status": status,
-            "grade": grade,
-            "generation_mode": generation_mode,
-        }
+            return {
+                "user": user,
+                "course_key": course_key,
+                "mode": mode,
+                "status": status,
+                "grade": grade,
+                "generation_mode": generation_mode,
+            }
+
+        return {}
 
 
 class CertificateRenderStartedWebFilter(PipelineStep):
@@ -1102,6 +1110,11 @@ class CertificateRenderStartedWebFilter(PipelineStep):
             _check_for_exception(exceptions, CertificateRenderStarted.RenderAlternativeInvalidCertificate)
             _check_for_exception(exceptions, CertificateRenderStarted.RenderCustomResponse)
 
+            return {
+                "context": context,
+                "custom_template": custom_template,
+            }
+
         return {}
 
 
@@ -1225,10 +1238,12 @@ class CohortChangeRequestedWebFilter(PipelineStep):
 
             _check_for_exception(exceptions, CohortChangeRequested.PreventCohortChange)
 
-        return {
-            "current_membership": current_membership,
-            "target_cohort": target_cohort,
-        }
+            return {
+                "current_membership": current_membership,
+                "target_cohort": target_cohort,
+            }
+
+        return {}
 
 
 class CohortAssignmentRequestedWebFilter(PipelineStep):
@@ -1345,11 +1360,12 @@ class CohortAssignmentRequestedWebFilter(PipelineStep):
 
             _check_for_exception(exceptions, CohortAssignmentRequested.PreventCohortAssignment)
 
-        return {
-            "user": user,
-            "target_cohort": target_cohort,
-        }
+            return {
+                "user": user,
+                "target_cohort": target_cohort,
+            }
 
+        return {}
 
 class CourseAboutRenderStartedWebFilter(PipelineStep):
     r"""
@@ -1700,10 +1716,7 @@ class CourseAboutRenderStartedWebFilter(PipelineStep):
                 "template_name": content.get('template_name') or template_name,
             }
 
-        return {
-            "context": context,
-            "template_name": template_name,
-        }
+        return {}
 
 
 class DashboardRenderStartedWebFilter(PipelineStep):
@@ -1920,7 +1933,7 @@ class DashboardRenderStartedWebFilter(PipelineStep):
                 "template_name": content.get('template_name') or template_name,
             }
 
-        return {"context": context, "template_name": template_name}
+        return {}
 
 
 class VerticalBlockChildRenderStartedWebFilter(PipelineStep):
@@ -1962,7 +1975,7 @@ class VerticalBlockChildRenderStartedWebFilter(PipelineStep):
 
             return return_data
 
-        return data
+        return {}
 
 
 class CourseEnrollmentQuerysetRequestedWebFilter(PipelineStep):
@@ -2007,7 +2020,7 @@ def run_filter(self, **data):
 
         _check_for_exception(exceptions, CourseEnrollmentQuerysetRequested.PreventEnrollmentQuerysetRequest)
 
-    return data
+    return {}
 
 
 class RenderXBlockStartedWebFilter(PipelineStep):
@@ -2051,7 +2064,7 @@ class RenderXBlockStartedWebFilter(PipelineStep):
 
             return return_data
 
-        return data
+        return {}
 
 
 class VerticalBlockRenderCompletedWebFilter(PipelineStep):
@@ -2111,7 +2124,7 @@ class VerticalBlockRenderCompletedWebFilter(PipelineStep):
 
             return return_data
 
-        return data
+        return {}
 
 
 class CourseHomeUrlCreationStartedWebFilter(PipelineStep):
@@ -2156,7 +2169,7 @@ class CourseHomeUrlCreationStartedWebFilter(PipelineStep):
 
             return return_data
 
-        return data
+        return {}
 
 
 class CourseEnrollmentAPIRenderStartedWebFilter(PipelineStep):
@@ -2201,7 +2214,7 @@ class CourseEnrollmentAPIRenderStartedWebFilter(PipelineStep):
 
             return return_data
 
-        return data
+        return {}
 
 
 class CourseRunAPIRenderStartedWebFilter(PipelineStep):
@@ -2243,7 +2256,7 @@ class CourseRunAPIRenderStartedWebFilter(PipelineStep):
 
             return return_data
 
-        return data
+        return {}
 
 
 class InstructorDashboardRenderStartedWebFilter(PipelineStep):
@@ -2289,7 +2302,7 @@ class InstructorDashboardRenderStartedWebFilter(PipelineStep):
 
             return return_data
 
-        return data
+        return {}
 
 
 class ORASubmissionViewRenderStartedWebFilter(PipelineStep):
@@ -2333,7 +2346,7 @@ class ORASubmissionViewRenderStartedWebFilter(PipelineStep):
 
             return return_data
 
-        return data
+        return {}
 
 
 # class IDVPageURLRequestedWebFilter(PipelineStep):
