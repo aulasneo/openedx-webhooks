@@ -298,31 +298,31 @@ Reporting Security Issues
 
 Please do not report security issues in public. Please email security@tcril.org.
 
-.. |pypi-badge| image:: https://img.shields.io/pypi/v/webhooks.svg
-    :target: https://pypi.python.org/pypi/webhooks/
+.. |pypi-badge| image:: https://img.shields.io/pypi/v/openedx-webhooks.svg
+    :target: https://pypi.python.org/pypi/openedx-webhooks/
     :alt: PyPI
 
-.. |ci-badge| image:: https://github.com/openedx/webhooks/workflows/Python%20CI/badge.svg?branch=main
+.. |ci-badge| image:: https://github.com/aulasneo/openedx-webhooks/workflows/Python%20CI/badge.svg?branch=main
     :target: https://github.com/openedx/webhooks/actions
     :alt: CI
 
-.. |codecov-badge| image:: https://codecov.io/github/openedx/webhooks/coverage.svg?branch=main
-    :target: https://codecov.io/github/openedx/webhooks?branch=main
+.. |codecov-badge| image:: https://codecov.io/github/aulasneo/openedx-webhooks/coverage.svg?branch=main
+    :target: https://codecov.io/github/aulasneo/openedx-webhooks?branch=main
     :alt: Codecov
 
-.. |doc-badge| image:: https://readthedocs.org/projects/webhooks/badge/?version=latest
-    :target: https://docs.openedx.org/projects/webhooks
+.. |doc-badge| image:: https://readthedocs.org/projects/openedx-webhooks/badge/?version=latest
+    :target: https://docs.openedx.org/projects/openedx-webhooks
     :alt: Documentation
 
-.. |pyversions-badge| image:: https://img.shields.io/pypi/pyversions/webhooks.svg
+.. |pyversions-badge| image:: https://img.shields.io/pypi/pyversions/openedx-webhooks.svg
     :target: https://pypi.python.org/pypi/webhooks/
     :alt: Supported Python versions
 
-.. |license-badge| image:: https://img.shields.io/github/license/openedx/webhooks.svg
-    :target: https://github.com/openedx/webhooks/blob/main/LICENSE.txt
+.. |license-badge| image:: https://img.shields.io/github/license/aulasneo/openedx-webhooks.svg
+    :target: https://github.com/aulasneo/openedx-webhooks/blob/master/LICENSE.txt
     :alt: License
 
-.. |status-badge| image:: https://img.shields.io/badge/Status-Experimental-yellow
+.. |status-badge| image:: https://img.shields.io/badge/Status-Production-green
 .. .. |status-badge| image:: https://img.shields.io/badge/Status-Maintained-brightgreen
 .. .. |status-badge| image:: https://img.shields.io/badge/Status-Deprecated-orange
 .. .. |status-badge| image:: https://img.shields.io/badge/Status-Unsupported-red

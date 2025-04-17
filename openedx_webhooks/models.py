@@ -12,6 +12,7 @@ usage:          Django models for Open edX signals webhooks
 from django.db import models
 from django.utils.translation import gettext as _
 from model_utils.models import TimeStampedModel
+
 from .apps import signals
 from .settings.common import plugin_settings
 
@@ -20,11 +21,12 @@ from .settings.common import plugin_settings
 class Fake_settings:
     OPEN_EDX_FILTERS_CONFIG = {}
 
+
 fake_settings = Fake_settings()
 
 plugin_settings(fake_settings)
 
-filters = [key for key in fake_settings.OPEN_EDX_FILTERS_CONFIG]
+filters = fake_settings.OPEN_EDX_FILTERS_CONFIG
 
 
 class Webhook(TimeStampedModel):
@@ -35,8 +37,8 @@ class Webhook(TimeStampedModel):
     """
 
     signal_list = []
-    for signal_app in signals:
-        signal_list += signals[signal_app]
+    for signal_app, signal_app_list in signals.items():
+        signal_list += signal_app_list
 
     # Create a set of pairs like ("COURSE_ENROLLMENT_CREATED", "Course enrollment created")...
     event_list = (

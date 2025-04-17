@@ -153,9 +153,9 @@ def plugin_settings(settings):
 
     }
 
-    for key in filters_config:
+    for key, filter_config in filters_config.items():
         if hasattr(settings, 'OPEN_EDX_FILTERS_CONFIG'):    # Avoid errors during build time
             if key in settings.OPEN_EDX_FILTERS_CONFIG:     # Allow other modules in the pipeline
-                settings.OPEN_EDX_FILTERS_CONFIG[key]['pipeline'] += filters_config[key]['pipeline']
+                settings.OPEN_EDX_FILTERS_CONFIG[key]['pipeline'] += filter_config['pipeline']
             else:
-                settings.OPEN_EDX_FILTERS_CONFIG[key] = filters_config[key]
+                settings.OPEN_EDX_FILTERS_CONFIG[key] = filter_config

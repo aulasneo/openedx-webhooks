@@ -31,27 +31,29 @@ from openedx_filters.learning.filters import (
     CohortAssignmentRequested,
     CohortChangeRequested,
     CourseAboutRenderStarted,
+    CourseEnrollmentQuerysetRequested,
     CourseEnrollmentStarted,
     CourseUnenrollmentStarted,
     DashboardRenderStarted,
+    InstructorDashboardRenderStarted,
     StudentLoginRequested,
     StudentRegistrationRequested,
     VerticalBlockChildRenderStarted,
-    CourseEnrollmentQuerysetRequested,
-    # RenderXBlockStarted,
     VerticalBlockRenderCompleted,
-    CourseHomeUrlCreationStarted,
-    CourseEnrollmentAPIRenderStarted,
-    CourseRunAPIRenderStarted,
-    InstructorDashboardRenderStarted,
-    # ORASubmissionViewRenderStarted,
-    # IDVPageURLRequested,
-    # CourseAboutPageURLRequested,
-    # ScheduleQuerySetRequested,
 )
 
 from .models import Webfilter
-from .utils import send, object_serializer
+from .utils import object_serializer, send
+
+# In Sumac add:
+# RenderXBlockStarted,
+# CourseHomeUrlCreationStarted,
+# CourseEnrollmentAPIRenderStarted,
+# CourseRunAPIRenderStarted,
+# ORASubmissionViewRenderStarted,
+# IDVPageURLRequested,
+# CourseAboutPageURLRequested,
+# ScheduleQuerySetRequested,
 
 logger = logging.getLogger(__name__)
 
@@ -838,7 +840,7 @@ class CertificateCreationRequestedWebFilter(PipelineStep):
     Note: Changes in the grade values do not take effect in the certificate and do not modify the user's grade.
     """
 
-    def run_filter(self, user, course_key, mode, status, grade, generation_mode):  # pylint: disable=arguments-differ
+    def run_filter(self, **data):
         """
         Execute a filter with the signature specified.
 
@@ -857,21 +859,18 @@ class CertificateCreationRequestedWebFilter(PipelineStep):
         webfilters = Webfilter.objects.filter(enabled=True, event=event)
 
         if webfilters:
+            user = data.get('user')
+            course_key = data.get('course_key')
+            grade = data.get('grade')
+            status = data.get('status')
+
             logger.info(f"Webfilter for {event} event. User: {user}, course: {course_key}, status: {status}")
 
-            data = {
-                "user": user,
-                "profile": user.profile,
-                "course_key": course_key,
-                "mode": mode,
-                "status": status,
-                "grade": grade.__dict__,
-                "generation_mode": generation_mode,
-                "completion_summary": get_course_blocks_completion_summary(course_key, user)
-            }
+            data["profile"] = user.profile
+            data["completion_summary"] = get_course_blocks_completion_summary(course_key, user)
 
             content, exceptions = _process_filter(webfilters=webfilters,
-                                                  data=data,
+                                                  data=object_serializer(data),
                                                   exception=CertificateCreationRequested.PreventCertificateCreation)
 
             update_model(user, content.get('user'))
@@ -880,15 +879,6 @@ class CertificateCreationRequestedWebFilter(PipelineStep):
             if 'course_key' in content:
                 course_key = CourseKey.from_string(content.get('course_key'))
 
-            if 'mode' in content:
-                mode = content.get('mode')
-
-            if 'status' in content:
-                status = content.get('status')
-
-            if 'generation_mode' in content:
-                generation_mode = content.get('generation_mode')
-
             update_object(grade, content.get('grade'))
 
             _check_for_exception(exceptions, CertificateCreationRequested.PreventCertificateCreation)
@@ -896,10 +886,10 @@ class CertificateCreationRequestedWebFilter(PipelineStep):
             return {
                 "user": user,
                 "course_key": course_key,
-                "mode": mode,
-                "status": status,
+                "mode": content.get('mode', data.get('mode')),
+                "status": content.get('status', data.get('status')),
                 "grade": grade,
-                "generation_mode": generation_mode,
+                "generation_mode": content.get('generation_mode', data.get('generation_mode')),
             }
 
         return {}
@@ -1366,6 +1356,7 @@ class CohortAssignmentRequestedWebFilter(PipelineStep):
             }
 
         return {}
+
 
 class CourseAboutRenderStartedWebFilter(PipelineStep):
     r"""
@@ -1935,8 +1926,8 @@ class DashboardRenderStartedWebFilter(PipelineStep):
 
         return {}
 
-# New in Redwood
 
+# New in Redwood
 class VerticalBlockChildRenderStartedWebFilter(PipelineStep):
     """
     Filter used to modify the rendering of a child block within a vertical block.
@@ -1953,9 +1944,10 @@ class VerticalBlockChildRenderStartedWebFilter(PipelineStep):
         - Path: xmodule/vertical_block.py
         - Function or Method: VerticalBlock._student_or_public_view
     """
+
     def run_filter(self, **data):
         """
-        data = block: Any, context: dict[str, Any]
+        :param data = block: Any, context: dict[str, Any].
         """
         # The event is the class name, except the last "WebFilter"
         event = type(self).__name__[:-9]
@@ -1997,31 +1989,31 @@ class CourseEnrollmentQuerysetRequestedWebFilter(PipelineStep):
         marked to be removed if it's not used. See openedx-filters#245 for more information.
     """
 
+    def run_filter(self, **data):
+        """
+        :param data = enrollments: QuerySet.
+        """
+        # The event is the class name, except the last "WebFilter"
+        event = type(self).__name__[:-9]
 
-def run_filter(self, **data):
-    """
-    data = enrollments: QuerySet
-    """
-    # The event is the class name, except the last "WebFilter"
-    event = type(self).__name__[:-9]
+        return_data = data.copy()
+        webfilters = Webfilter.objects.filter(enabled=True, event=event)
 
-    return_data = data.copy()
-    webfilters = Webfilter.objects.filter(enabled=True, event=event)
+        if webfilters:
+            logger.info(f"Webfilter for {event} event.")
 
-    if webfilters:
-        logger.info(f"Webfilter for {event} event.")
+            return_data['enrollments'] = list(data['enrollments'].values())
 
-        return_data['enrollments'] = list(data['enrollments'].values())
+            content, exceptions = _process_filter(
+                webfilters=webfilters,
+                data=data,
+                exception=CourseEnrollmentQuerysetRequested.PreventEnrollmentQuerysetRequest)
 
-        content, exceptions = _process_filter(webfilters=webfilters,
-                                              data=data,
-                                              exception=CourseEnrollmentQuerysetRequested.PreventEnrollmentQuerysetRequest)
+            return_data['enrollments'] = data['enrollments'].filter(content.get('filter', {}))
 
-        return_data['enrollments'] = data['enrollments'].filter(content.get('filter', {}))
+            _check_for_exception(exceptions, CourseEnrollmentQuerysetRequested.PreventEnrollmentQuerysetRequest)
 
-        _check_for_exception(exceptions, CourseEnrollmentQuerysetRequested.PreventEnrollmentQuerysetRequest)
-
-    return {}
+        return {}
 
 
 # class RenderXBlockStartedWebFilter(PipelineStep):
@@ -2029,7 +2021,8 @@ def run_filter(self, **data):
 #     Filter in between context generation and rendering of XBlock scope.
 #
 #     Purpose:
-#         This filter is triggered when an XBlock is about to be rendered, just before the rendering process is completed
+#         This filter is triggered when an XBlock is about to be rendered,
+#         just before the rendering process is completed
 #         allowing the filter to act on the context and student_view_context used to render the XBlock.
 #
 #     Filter Type:
@@ -2043,7 +2036,7 @@ def run_filter(self, **data):
 #
 #     def run_filter(self, **data):
 #         """
-#         data = context: dict[str, Any], student_view_context: dict
+#         :param data = context: dict[str, Any], student_view_context: dict
 #         """
 #         # The event is the class name, except the last "WebFilter"
 #         event = type(self).__name__[:-9]
@@ -2087,9 +2080,9 @@ class VerticalBlockRenderCompletedWebFilter(PipelineStep):
 
     def run_filter(self, **data):
         """
-        data = block: Any, fragment: Any, context: dict[str, Any], view: str
+        :param data = block: Any, fragment: Any, context: dict[str, Any], view: str.
 
-                Process the inputs using the configured pipeline steps to modify the rendering of a vertical block.
+        Process the inputs using the configured pipeline steps to modify the rendering of a vertical block.
 
         Arguments:
             block (VerticalBlock): The VeriticalBlock instance which is being rendered.
@@ -2104,7 +2097,6 @@ class VerticalBlockRenderCompletedWebFilter(PipelineStep):
                 - dict: rendering context values like is_mobile_app, show_title..etc.
                 - str: the rendering view. Can be either 'student_view', or 'public_view'.
         """
-
         # The event is the class name, except the last "WebFilter"
         event = type(self).__name__[:-9]
 
@@ -2147,9 +2139,8 @@ class CourseHomeUrlCreationStartedWebFilter(PipelineStep):
 
     def run_filter(self, **data):
         """
-        data = course_key: CourseKey, course_home_url: str
+        :param data = course_key: CourseKey, course_home_url: str.
         """
-
         # The event is the class name, except the last "WebFilter"
         event = type(self).__name__[:-9]
 
@@ -2162,9 +2153,10 @@ class CourseHomeUrlCreationStartedWebFilter(PipelineStep):
             course_key = data.get('course_key')
             course_id = f"course-v1:{course_key.org}+{course_key.course}+{course_key.run}"
 
-            content, exceptions = _process_filter(webfilters=webfilters,
-                                                  data={"course_id": course_id, "course_home_url": data.get('course_home_url')},
-                                                  exception=CourseHomeUrlCreationStarted.PreventChildBlockRender)
+            content, _ = _process_filter(
+                webfilters=webfilters,
+                data={"course_id": course_id, "course_home_url": data.get('course_home_url')},
+                exception=None)
 
             return_data['course_home_url'] = content.get('course_home_url', data.get('course_home_url'))
 
@@ -2192,9 +2184,8 @@ class CourseEnrollmentAPIRenderStartedWebFilter(PipelineStep):
 
     def run_filter(self, **data):
         """
-        data = course_key: CourseKey, serialized_enrollment: dict[str, Any]
+        :param data = course_key: CourseKey, serialized_enrollment: dict[str, Any].
         """
-
         # The event is the class name, except the last "WebFilter"
         event = type(self).__name__[:-9]
 
@@ -2207,11 +2198,13 @@ class CourseEnrollmentAPIRenderStartedWebFilter(PipelineStep):
             course_key = data.get('course_key')
             course_id = f"course-v1:{course_key.org}+{course_key.course}+{course_key.run}"
 
-            content, exceptions = _process_filter(webfilters=webfilters,
-                                                  data={"course_id": course_id, "serialized_enrollment": data.get('serialized_enrollment')},
-                                                  exception=None)
+            content, _ = _process_filter(
+                webfilters=webfilters,
+                data={"course_id": course_id, "serialized_enrollment": data.get('serialized_enrollment')},
+                exception=None)
 
-            return_data['serialized_enrollment'] = content.get('serialized_enrollment', data.get('serialized_enrollment'))
+            return_data['serialized_enrollment'] = content.get('serialized_enrollment',
+                                                               data.get('serialized_enrollment'))
 
             return return_data
 
@@ -2237,9 +2230,8 @@ class CourseRunAPIRenderStartedWebFilter(PipelineStep):
 
     def run_filter(self, **data):
         """
-        data = serialized_courserun: dict[str, Any]
+        :param data = serialized_courserun: dict[str, Any].
         """
-
         # The event is the class name, except the last "WebFilter"
         event = type(self).__name__[:-9]
 
@@ -2249,9 +2241,7 @@ class CourseRunAPIRenderStartedWebFilter(PipelineStep):
         if webfilters:
             logger.info(f"Webfilter for {event} event.")
 
-            content, exceptions = _process_filter(webfilters=webfilters,
-                                                  data=data,
-                                                  exception=None)
+            content, _ = _process_filter(webfilters=webfilters, data=data, exception=None)
 
             return_data.update(content)
 
@@ -2279,9 +2269,8 @@ class InstructorDashboardRenderStartedWebFilter(PipelineStep):
 
     def run_filter(self, **data):
         """
-        data = context: dict[str, Any], template_name: str
+        :param data = context: dict[str, Any], template_name: str.
         """
-
         # The event is the class name, except the last "WebFilter"
         event = type(self).__name__[:-9]
 
@@ -2311,7 +2300,8 @@ class InstructorDashboardRenderStartedWebFilter(PipelineStep):
 #     Filter used to modify the submission view rendering process.
 #
 #     Purpose:
-#         This filter is triggered when a user requests to view the submission, just before the page is rendered allowing
+#         This filter is triggered when a user requests to view the submission,
+#         just before the page is rendered allowing
 #         the filter to act on the context and the template used to render the page.
 #
 #     Filter Type:
@@ -2325,7 +2315,7 @@ class InstructorDashboardRenderStartedWebFilter(PipelineStep):
 #
 #     def run_filter(self, **data):
 #         """
-#         data = context: dict[str, Any], template_name: str
+#         :param data = context: dict[str, Any], template_name: str
 #         """
 #
 #         # The event is the class name, except the last "WebFilter"
@@ -2355,7 +2345,8 @@ class InstructorDashboardRenderStartedWebFilter(PipelineStep):
 #     Filter used to act on ID verification page URL requests.
 #
 #     Purpose:
-#         This filter is triggered when a user requests to view the ID verification page, just before the page is rendered
+#         This filter is triggered when a user requests to view the ID verification page,
+#         just before the page is rendered
 #         allowing the filter to act on the URL of the page.
 #
 #     Filter Type:
@@ -2369,7 +2360,7 @@ class InstructorDashboardRenderStartedWebFilter(PipelineStep):
 #
 #     def run_filter(self, **data):
 #         """
-#         data = url: str
+#         :param data = url: str
 #         """
 #         # The event is the class name, except the last "WebFilter"
 #         event = type(self).__name__[:-9]
@@ -2409,7 +2400,7 @@ class InstructorDashboardRenderStartedWebFilter(PipelineStep):
 #
 #     def run_filter(self, **data):
 #         """
-#         data = url: str, org: str
+#         :param data = url: str, org: str
 #         """
 #
 #         # The event is the class name, except the last "WebFilter"
@@ -2437,7 +2428,8 @@ class InstructorDashboardRenderStartedWebFilter(PipelineStep):
 #     Filter used to apply additional filtering to a given QuerySet of Schedules.
 #
 #     Purpose:
-#         This filter is triggered when a QuerySet of Schedules is requested, allowing the filter to act on the schedules
+#         This filter is triggered when a QuerySet of Schedules is requested,
+#         allowing the filter to act on the schedules
 #         data. If you want to know more about the Schedules feature, please refer to the official documentation:
 #             - https://github.com/openedx/edx-platform/tree/master/openedx/core/djangoapps/schedules#readme
 #
@@ -2452,7 +2444,7 @@ class InstructorDashboardRenderStartedWebFilter(PipelineStep):
 #
 #     def run_filter(self, **data):
 #         """
-#         data = schedules: QuerySet
+#         :param data = schedules: QuerySet
 #         """
 #
 #         # The event is the class name, except the last "WebFilter"
@@ -2481,7 +2473,8 @@ class InstructorDashboardRenderStartedWebFilter(PipelineStep):
 #         Filter used to modify the URL of the page requested by the user.
 #
 #         Purpose:
-#             This filter is triggered when a user loads a page in Studio that references an LMS page, allowing the filter to
+#             This filter is triggered when a user loads a page in Studio that references an LMS page,
+#             allowing the filter to
 #             modify the URL of the page requested by the user.
 #
 #         Filter Type:

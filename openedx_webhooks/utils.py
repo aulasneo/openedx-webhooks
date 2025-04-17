@@ -8,7 +8,7 @@ from typing import Any, Union
 
 import requests
 from opaque_keys import OpaqueKey
-from xblock.fields import ScopeIds
+from xblock.fields import ScopeIds  # pylint: disable=import-error
 
 logger = logging.getLogger(__name__)
 
@@ -47,13 +47,15 @@ def flatten_dict(dictionary, parent_key="", sep="_"):
 
 def value_serializer(inst, field, value):  # pylint: disable=unused-argument
     """
-    Serialize instances of CourseLocator.
-
-    When value is anything else returns it without modification.
+    Serialize values for attr function.
     """
     return object_serializer(value)
 
+
 def scope_ids_serializer(o):
+    """
+    Serialize instances of ScopeId.
+    """
     return {
         "block_type": o.block_type,
         "def_id": str(o.def_id),
@@ -61,16 +63,20 @@ def scope_ids_serializer(o):
         "user_id": o.user_id,
     }
 
+
 def object_serializer(o, depth=0) -> Union[dict, Any]:
+    """
+    Serialize an arbitrary object as a json-serializable dict.
+    """
     if depth > 100:
         return "! Depth limit reached !"
-    if isinstance(o, int) or isinstance(o, float) or isinstance(o, str) or o is None:
+    if isinstance(o, (int, float,  str)) or o is None:
         return o
     elif isinstance(o, ScopeIds):
         return scope_ids_serializer(o)
     elif isinstance(o, OpaqueKey):
         return str(o)
-    if isinstance(o, list) or isinstance(o, tuple) or isinstance(o, set):
+    if isinstance(o, (list, tuple, set)):
         return [object_serializer(item, depth + 1) for item in o]
     return_value = {}
     if isinstance(o, dict):

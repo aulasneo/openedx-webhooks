@@ -83,8 +83,8 @@ class WebhooksConfig(AppConfig):
     name = 'openedx_webhooks'
 
     receivers = []
-    for signal_app in signals:
-        for signal in signals[signal_app]:
+    for signal_app, signal_list in signals.items():
+        for signal in signal_list:
             receivers.append({
                         "receiver_func_name": signal.lower() + "_receiver",
                         "signal_path": f"openedx_events.{signal_app}.signals.{signal}",

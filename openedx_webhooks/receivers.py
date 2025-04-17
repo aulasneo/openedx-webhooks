@@ -139,150 +139,246 @@ def course_discussions_changed_receiver(configuration, **kwargs):
 
 
 def program_certificate_awarded_receiver(data, **kwargs):
+    """Handle PROGRAM_CERTIFICATE_AWARDED signal."""
     _process_event("PROGRAM_CERTIFICATE_AWARDED", data, **kwargs)
 
+
 def program_certificate_revoked_receiver(data, **kwargs):
+    """Handle PROGRAM_CERTIFICATE_REVOKED signal."""
     _process_event("PROGRAM_CERTIFICATE_REVOKED", data, **kwargs)
 
+
 def persistent_grade_summary_changed_receiver(data, **kwargs):
+    """Handle PERSISTENT_GRADE_SUMMARY_CHANGED signal."""
     _process_event("PERSISTENT_GRADE_SUMMARY_CHANGED", data, **kwargs)
 
+
 def xblock_skill_verified_receiver(data, **kwargs):
+    """Handle XBLOCK_SKILL_VERIFIED signal."""
     _process_event("XBLOCK_SKILL_VERIFIED", data, **kwargs)
 
+
 def user_notification_requested_receiver(data, **kwargs):
+    """Handle USER_NOTIFICATION_REQUESTED signal."""
     _process_event("USER_NOTIFICATION_REQUESTED", data, **kwargs)
 
+
 def exam_attempt_submitted_receiver(data, **kwargs):
+    """Handle EXAM_ATTEMPT_SUBMITTED signal."""
     _process_event("EXAM_ATTEMPT_SUBMITTED", data, **kwargs)
 
+
 def exam_attempt_rejected_receiver(data, **kwargs):
+    """Handle EXAM_ATTEMPT_REJECTED signal."""
     _process_event("EXAM_ATTEMPT_REJECTED", data, **kwargs)
 
+
 def exam_attempt_verified_receiver(data, **kwargs):
+    """Handle EXAM_ATTEMPT_VERIFIED signal."""
     _process_event("EXAM_ATTEMPT_VERIFIED", data, **kwargs)
 
+
 def exam_attempt_errored_receiver(data, **kwargs):
+    """Handle EXAM_ATTEMPT_ERRORED signal."""
     _process_event("EXAM_ATTEMPT_ERRORED", data, **kwargs)
 
+
 def exam_attempt_reset_receiver(data, **kwargs):
+    """Handle EXAM_ATTEMPT_RESET signal."""
     _process_event("EXAM_ATTEMPT_RESET", data, **kwargs)
 
+
 def course_access_role_added_receiver(data, **kwargs):
+    """Handle COURSE_ACCESS_ROLE_ADDED signal."""
     _process_event("COURSE_ACCESS_ROLE_ADDED", data, **kwargs)
 
+
 def course_access_role_removed_receiver(data, **kwargs):
+    """Handle COURSE_ACCESS_ROLE_REMOVED signal."""
     _process_event("COURSE_ACCESS_ROLE_REMOVED", data, **kwargs)
 
+
 def forum_thread_created_receiver(data, **kwargs):
+    """Handle FORUM_THREAD_CREATED signal."""
     _process_event("FORUM_THREAD_CREATED", data, **kwargs)
 
+
 def forum_thread_response_created_receiver(data, **kwargs):
+    """Handle FORUM_THREAD_RESPONSE_CREATED signal."""
     _process_event("FORUM_THREAD_RESPONSE_CREATED", data, **kwargs)
 
+
 def forum_response_comment_created_receiver(data, **kwargs):
+    """Handle FORUM_RESPONSE_COMMENT_CREATED signal."""
     _process_event("FORUM_RESPONSE_COMMENT_CREATED", data, **kwargs)
 
+
 def course_notification_requested_receiver(data, **kwargs):
+    """Handle COURSE_NOTIFICATION_REQUESTED signal."""
     _process_event("COURSE_NOTIFICATION_REQUESTED", data, **kwargs)
 
+
 def ora_submission_created_receiver(data, **kwargs):
+    """Handle ORA_SUBMISSION_CREATED signal."""
     _process_event("ORA_SUBMISSION_CREATED", data, **kwargs)
 
+
 def course_passing_status_updated_receiver(data, **kwargs):
+    """Handle COURSE_PASSING_STATUS_UPDATED signal."""
     _process_event("COURSE_PASSING_STATUS_UPDATED", data, **kwargs)
 
+
 def ccx_course_passing_status_updated_receiver(data, **kwargs):
+    """Handle CCX_COURSE_PASSING_STATUS_UPDATED signal."""
     _process_event("CCX_COURSE_PASSING_STATUS_UPDATED", data, **kwargs)
 
+
 def badge_awarded_receiver(data, **kwargs):
+    """Handle BADGE_AWARDED signal."""
     _process_event("BADGE_AWARDED", data, **kwargs)
 
+
 def badge_revoked_receiver(data, **kwargs):
+    """Handle BADGE_REVOKED signal."""
     _process_event("BADGE_REVOKED", data, **kwargs)
 
+
 # def idv_attempt_created_receiver(data, **kwargs):
+# """Handle IDV_ATTEMPT_CREATED signal."""
 #     _process_event("IDV_ATTEMPT_CREATED", data, **kwargs)
 #
+
 # def idv_attempt_pending_receiver(data, **kwargs):
+# """Handle IDV_ATTEMPT_PENDING signal."""
 #     _process_event("IDV_ATTEMPT_PENDING", data, **kwargs)
 #
+
 # def idv_attempt_approved_receiver(data, **kwargs):
+# """Handle IDV_ATTEMPT_APPROVED signal."""
 #     _process_event("IDV_ATTEMPT_APPROVED", data, **kwargs)
 #
+
 # def idv_attempt_denied_receiver(data, **kwargs):
+# """Handle IDV_ATTEMPT_DENIED signal."""
 #     _process_event("IDV_ATTEMPT_DENIED", data, **kwargs)
 
 #
 # Course authoring
-
 def course_catalog_info_changed_receiver(data, **kwargs):
+    """Handle COURSE_CATALOG_INFO_CHANGED signal."""
     _process_event("COURSE_CATALOG_INFO_CHANGED", data, **kwargs)
 
+
 def xblock_created_receiver(data, **kwargs):
+    """Handle XBLOCK_CREATED signal."""
     _process_event("XBLOCK_CREATED", data, **kwargs)
 
+
 def xblock_updated_receiver(data, **kwargs):
+    """Handle XBLOCK_UPDATED signal."""
     _process_event("XBLOCK_UPDATED", data, **kwargs)
 
+
 def xblock_published_receiver(data, **kwargs):
+    """Handle XBLOCK_PUBLISHED signal."""
     _process_event("XBLOCK_PUBLISHED", data, **kwargs)
 
+
 def xblock_deleted_receiver(data, **kwargs):
+    """Handle XBLOCK_DELETED signal."""
     _process_event("XBLOCK_DELETED", data, **kwargs)
 
+
 def xblock_duplicated_receiver(data, **kwargs):
+    """Handle XBLOCK_DUPLICATED signal."""
     _process_event("XBLOCK_DUPLICATED", data, **kwargs)
 
+
 def course_certificate_config_changed_receiver(data, **kwargs):
+    """Handle COURSE_CERTIFICATE_CONFIG_CHANGED signal."""
     _process_event("COURSE_CERTIFICATE_CONFIG_CHANGED", data, **kwargs)
 
+
 def course_certificate_config_deleted_receiver(data, **kwargs):
+    """Handle COURSE_CERTIFICATE_CONFIG_DELETED signal."""
     _process_event("COURSE_CERTIFICATE_CONFIG_DELETED", data, **kwargs)
 
+
 def course_created_receiver(data, **kwargs):
+    """Handle COURSE_CREATED signal."""
     _process_event("COURSE_CREATED", data, **kwargs)
 
+
 def content_library_created_receiver(data, **kwargs):
+    """Handle CONTENT_LIBRARY_CREATED signal."""
     _process_event("CONTENT_LIBRARY_CREATED", data, **kwargs)
 
+
 def content_library_updated_receiver(data, **kwargs):
+    """Handle CONTENT_LIBRARY_UPDATED signal."""
     _process_event("CONTENT_LIBRARY_UPDATED", data, **kwargs)
 
+
 def content_library_deleted_receiver(data, **kwargs):
+    """Handle CONTENT_LIBRARY_DELETED signal."""
     _process_event("CONTENT_LIBRARY_DELETED", data, **kwargs)
 
+
 def library_block_created_receiver(data, **kwargs):
+    """Handle LIBRARY_BLOCK_CREATED signal."""
     _process_event("LIBRARY_BLOCK_CREATED", data, **kwargs)
 
+
 def library_block_updated_receiver(data, **kwargs):
+    """Handle LIBRARY_BLOCK_UPDATED signal."""
     _process_event("LIBRARY_BLOCK_UPDATED", data, **kwargs)
 
+
 def library_block_deleted_receiver(data, **kwargs):
+    """Handle LIBRARY_BLOCK_DELETED signal."""
     _process_event("LIBRARY_BLOCK_DELETED", data, **kwargs)
 
+
 def content_object_associations_changed_receiver(data, **kwargs):
+    """Handle CONTENT_OBJECT_ASSOCIATIONS_CHANGED signal."""
     _process_event("CONTENT_OBJECT_ASSOCIATIONS_CHANGED", data, **kwargs)
 
+
 def content_object_tags_changed_receiver(data, **kwargs):
+    """Handle CONTENT_OBJECT_TAGS_CHANGED signal."""
     _process_event("CONTENT_OBJECT_TAGS_CHANGED", data, **kwargs)
 
+
 def library_collection_created_receiver(data, **kwargs):
+    """Handle LIBRARY_COLLECTION_CREATED signal."""
     _process_event("LIBRARY_COLLECTION_CREATED", data, **kwargs)
 
+
 def library_collection_updated_receiver(data, **kwargs):
+    """Handle LIBRARY_COLLECTION_UPDATED signal."""
     _process_event("LIBRARY_COLLECTION_UPDATED", data, **kwargs)
 
+
 def library_collection_deleted_receiver(data, **kwargs):
+    """Handle LIBRARY_COLLECTION_DELETED signal."""
     _process_event("LIBRARY_COLLECTION_DELETED", data, **kwargs)
 
+
 def library_container_created_receiver(data, **kwargs):
+    """Handle LIBRARY_CONTAINER_CREATED signal."""
     _process_event("LIBRARY_CONTAINER_CREATED", data, **kwargs)
 
+
 def library_container_updated_receiver(data, **kwargs):
+    """Handle LIBRARY_CONTAINER_UPDATED signal."""
     _process_event("LIBRARY_CONTAINER_UPDATED", data, **kwargs)
 
-def library_container_deleted_receiver(data, **kwargs): _process_event("LIBRARY_CONTAINER_DELETED", data, **kwargs)
+
+def library_container_deleted_receiver(data, **kwargs):
+    """Handle LIBRARY_CONTAINER_DELETED signal."""
+    _process_event("LIBRARY_CONTAINER_DELETED", data, **kwargs)
+
 
 def course_import_completed_receiver(data, **kwargs):
+    """Handle COURSE_IMPORT_COMPLETED signal."""
     _process_event("COURSE_IMPORT_COMPLETED", data, **kwargs)

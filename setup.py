@@ -9,8 +9,8 @@ import sys
 
 from setuptools import find_packages, setup
 
-
 HERE = os.path.abspath(os.path.dirname(__file__))
+
 
 def get_version(*file_paths):
     """
@@ -100,7 +100,9 @@ if sys.argv[-1] == 'tag':
     os.system("git push --tags")
     sys.exit()
 
+
 def load_readme():
+    """Load the README file."""
     with io.open(os.path.join(HERE, "README.rst"), "rt", encoding="utf8") as f:
         return f.read()
 
