@@ -3,7 +3,7 @@ Utilities used by Open edX Events Receivers.
 """
 import json
 import logging
-from collections.abc import MutableMapping, dict_values
+from collections.abc import MutableMapping
 from typing import Any, Union
 
 import requests
