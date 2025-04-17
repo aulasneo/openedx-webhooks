@@ -62,7 +62,7 @@ def scope_ids_serializer(o):
     }
 
 def object_serializer(o, depth=0) -> Union[dict, Any]:
-    if depth > 10:
+    if depth > 100:
         return "! Depth limit reached !"
     if isinstance(o, int) or isinstance(o, float) or isinstance(o, str) or o is None:
         return o
@@ -70,7 +70,7 @@ def object_serializer(o, depth=0) -> Union[dict, Any]:
         return scope_ids_serializer(o)
     elif isinstance(o, OpaqueKey):
         return str(o)
-    if isinstance(o, list):
+    if isinstance(o, list) or isinstance(o, tuple) or isinstance(o, set):
         return [object_serializer(item, depth + 1) for item in o]
     return_value = {}
     if isinstance(o, dict):
