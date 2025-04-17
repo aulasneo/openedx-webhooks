@@ -51,7 +51,7 @@ from openedx_filters.learning.filters import (
 )
 
 from .models import Webfilter
-from .utils import send
+from .utils import send, object_serializer
 
 logger = logging.getLogger(__name__)
 
@@ -1935,6 +1935,7 @@ class DashboardRenderStartedWebFilter(PipelineStep):
 
         return {}
 
+# New in Redwood
 
 class VerticalBlockChildRenderStartedWebFilter(PipelineStep):
     """
@@ -1966,7 +1967,7 @@ class VerticalBlockChildRenderStartedWebFilter(PipelineStep):
             logger.info(f"Webfilter for {event} event.")
 
             content, exceptions = _process_filter(webfilters=webfilters,
-                                                  data=data,
+                                                  data=object_serializer(data),
                                                   exception=VerticalBlockChildRenderStarted.PreventChildBlockRender)
 
             return_data['context'].update(content.get('context', {}))
@@ -2023,48 +2024,48 @@ def run_filter(self, **data):
     return {}
 
 
-class RenderXBlockStartedWebFilter(PipelineStep):
-    """
-    Filter in between context generation and rendering of XBlock scope.
-
-    Purpose:
-        This filter is triggered when an XBlock is about to be rendered, just before the rendering process is completed
-        allowing the filter to act on the context and student_view_context used to render the XBlock.
-
-    Filter Type:
-        org.openedx.learning.xblock.render.started.v1
-
-    Trigger:
-        - Repository: openedx/edx-platform
-        - Path: lms/djangoapps/courseware/views/views.py
-        - Function or Method: render_xblock
-    """
-
-    def run_filter(self, **data):
-        """
-        data = context: dict[str, Any], student_view_context: dict
-        """
-        # The event is the class name, except the last "WebFilter"
-        event = type(self).__name__[:-9]
-
-        return_data = data.copy()
-        webfilters = Webfilter.objects.filter(enabled=True, event=event)
-
-        if webfilters:
-            logger.info(f"Webfilter for {event} event.")
-
-            content, exceptions = _process_filter(webfilters=webfilters,
-                                                  data=data,
-                                                  exception=RenderXBlockStarted.PreventXBlockBlockRender)
-
-            return_data.update(content)
-
-            _check_for_exception(exceptions, RenderXBlockStarted.PreventXBlockBlockRender)
-            _check_for_exception(exceptions, RenderXBlockStarted.RenderCustomResponse)
-
-            return return_data
-
-        return {}
+# class RenderXBlockStartedWebFilter(PipelineStep):
+#     """
+#     Filter in between context generation and rendering of XBlock scope.
+#
+#     Purpose:
+#         This filter is triggered when an XBlock is about to be rendered, just before the rendering process is completed
+#         allowing the filter to act on the context and student_view_context used to render the XBlock.
+#
+#     Filter Type:
+#         org.openedx.learning.xblock.render.started.v1
+#
+#     Trigger:
+#         - Repository: openedx/edx-platform
+#         - Path: lms/djangoapps/courseware/views/views.py
+#         - Function or Method: render_xblock
+#     """
+#
+#     def run_filter(self, **data):
+#         """
+#         data = context: dict[str, Any], student_view_context: dict
+#         """
+#         # The event is the class name, except the last "WebFilter"
+#         event = type(self).__name__[:-9]
+#
+#         return_data = data.copy()
+#         webfilters = Webfilter.objects.filter(enabled=True, event=event)
+#
+#         if webfilters:
+#             logger.info(f"Webfilter for {event} event.")
+#
+#             content, exceptions = _process_filter(webfilters=webfilters,
+#                                                   data=data,
+#                                                   exception=RenderXBlockStarted.PreventXBlockBlockRender)
+#
+#             return_data.update(content)
+#
+#             _check_for_exception(exceptions, RenderXBlockStarted.PreventXBlockBlockRender)
+#             _check_for_exception(exceptions, RenderXBlockStarted.RenderCustomResponse)
+#
+#             return return_data
+#
+#         return {}
 
 
 class VerticalBlockRenderCompletedWebFilter(PipelineStep):
@@ -2305,50 +2306,50 @@ class InstructorDashboardRenderStartedWebFilter(PipelineStep):
         return {}
 
 
-class ORASubmissionViewRenderStartedWebFilter(PipelineStep):
-    """
-    Filter used to modify the submission view rendering process.
-
-    Purpose:
-        This filter is triggered when a user requests to view the submission, just before the page is rendered allowing
-        the filter to act on the context and the template used to render the page.
-
-    Filter Type:
-        org.openedx.learning.ora.submission_view.render.started.v1
-
-    Trigger:
-        - Repository: openedx/edx-ora2
-        - Path: openassessment/xblock/ui_mixins/legacy/views/submission.py
-        - Function or Method: render_submission
-    """
-
-    def run_filter(self, **data):
-        """
-        data = context: dict[str, Any], template_name: str
-        """
-
-        # The event is the class name, except the last "WebFilter"
-        event = type(self).__name__[:-9]
-
-        return_data = data.copy()
-        webfilters = Webfilter.objects.filter(enabled=True, event=event)
-
-        if webfilters:
-            logger.info(f"Webfilter for {event} event.")
-
-            content, exceptions = _process_filter(webfilters=webfilters,
-                                                  data=data,
-                                                  exception=ORASubmissionViewRenderStarted.RenderInvalidTemplate)
-
-            return_data.update(content)
-
-            _check_for_exception(exceptions, ORASubmissionViewRenderStarted.RenderInvalidTemplate)
-
-            return return_data
-
-        return {}
-
-
+# class ORASubmissionViewRenderStartedWebFilter(PipelineStep):
+#     """
+#     Filter used to modify the submission view rendering process.
+#
+#     Purpose:
+#         This filter is triggered when a user requests to view the submission, just before the page is rendered allowing
+#         the filter to act on the context and the template used to render the page.
+#
+#     Filter Type:
+#         org.openedx.learning.ora.submission_view.render.started.v1
+#
+#     Trigger:
+#         - Repository: openedx/edx-ora2
+#         - Path: openassessment/xblock/ui_mixins/legacy/views/submission.py
+#         - Function or Method: render_submission
+#     """
+#
+#     def run_filter(self, **data):
+#         """
+#         data = context: dict[str, Any], template_name: str
+#         """
+#
+#         # The event is the class name, except the last "WebFilter"
+#         event = type(self).__name__[:-9]
+#
+#         return_data = data.copy()
+#         webfilters = Webfilter.objects.filter(enabled=True, event=event)
+#
+#         if webfilters:
+#             logger.info(f"Webfilter for {event} event.")
+#
+#             content, exceptions = _process_filter(webfilters=webfilters,
+#                                                   data=data,
+#                                                   exception=ORASubmissionViewRenderStarted.RenderInvalidTemplate)
+#
+#             return_data.update(content)
+#
+#             _check_for_exception(exceptions, ORASubmissionViewRenderStarted.RenderInvalidTemplate)
+#
+#             return return_data
+#
+#         return {}
+#
+#
 # class IDVPageURLRequestedWebFilter(PipelineStep):
 #     """
 #     Filter used to act on ID verification page URL requests.

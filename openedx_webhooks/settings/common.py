@@ -120,12 +120,12 @@ def plugin_settings(settings):
                 "openedx_webhooks.filters.InstructorDashboardRenderStartedWebFilter"
             ]
         },
-        "org.openedx.learning.ora.submission_view.render.started.v1": {
-            "fail_silently": False,
-            "pipeline": [
-                "openedx_webhooks.filters.ORASubmissionViewRenderStartedWebFilter"
-            ]
-        },
+        # "org.openedx.learning.ora.submission_view.render.started.v1": {
+        #     "fail_silently": False,
+        #     "pipeline": [
+        #         "openedx_webhooks.filters.ORASubmissionViewRenderStartedWebFilter"
+        #     ]
+        # },
         # "org.openedx.learning.idv.page.url.requested.v1": {
         #     "fail_silently": False,
         #     "pipeline": [
