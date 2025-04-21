@@ -1,7 +1,7 @@
 Change Log
 ##########
 
-Unreleased
+Version 18.0.0 (2025-04-21)
 **********************************************
 
 * Fix: Fix return value of all filters
