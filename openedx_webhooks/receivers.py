@@ -243,24 +243,25 @@ def badge_revoked_receiver(data, **kwargs):
     _process_event("BADGE_REVOKED", data, **kwargs)
 
 
-# def idv_attempt_created_receiver(data, **kwargs):
-# """Handle IDV_ATTEMPT_CREATED signal."""
-#     _process_event("IDV_ATTEMPT_CREATED", data, **kwargs)
-#
+def idv_attempt_created_receiver(data, **kwargs):
+    """Handle IDV_ATTEMPT_CREATED signal."""
+    _process_event("IDV_ATTEMPT_CREATED", data, **kwargs)
 
-# def idv_attempt_pending_receiver(data, **kwargs):
-# """Handle IDV_ATTEMPT_PENDING signal."""
-#     _process_event("IDV_ATTEMPT_PENDING", data, **kwargs)
-#
 
-# def idv_attempt_approved_receiver(data, **kwargs):
-# """Handle IDV_ATTEMPT_APPROVED signal."""
-#     _process_event("IDV_ATTEMPT_APPROVED", data, **kwargs)
-#
+def idv_attempt_pending_receiver(data, **kwargs):
+    """Handle IDV_ATTEMPT_PENDING signal."""
+    _process_event("IDV_ATTEMPT_PENDING", data, **kwargs)
 
-# def idv_attempt_denied_receiver(data, **kwargs):
-# """Handle IDV_ATTEMPT_DENIED signal."""
-#     _process_event("IDV_ATTEMPT_DENIED", data, **kwargs)
+
+def idv_attempt_approved_receiver(data, **kwargs):
+    """Handle IDV_ATTEMPT_APPROVED signal."""
+    _process_event("IDV_ATTEMPT_APPROVED", data, **kwargs)
+
+
+def idv_attempt_denied_receiver(data, **kwargs):
+    """Handle IDV_ATTEMPT_DENIED signal."""
+    _process_event("IDV_ATTEMPT_DENIED", data, **kwargs)
+
 
 #
 # Course authoring

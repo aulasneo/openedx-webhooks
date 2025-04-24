@@ -8,7 +8,7 @@ from typing import Any, Union
 
 import requests
 from opaque_keys import OpaqueKey
-from xblock.fields import ScopeIds  # pylint: disable=import-error
+from xblock.fields import ScopeIds
 
 logger = logging.getLogger(__name__)
 

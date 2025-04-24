@@ -1,6 +1,21 @@
 Change Log
 ##########
 
+Unreleased
+**********************************************
+
+* Feat: Add new filters for Sumac:
+    * ORASubmissionViewRenderStarted
+    * IDVPageURLRequested
+    * CourseAboutPageURLRequested
+    * ScheduleQuerySetRequested
+    * LMSPageURLRequested
+* Feat: Add new signal receivers for Sumac:
+    * IDV_ATTEMPT_CREATED
+    * IDV_ATTEMPT_PENDING
+    * IDV_ATTEMPT_APPROVED
+    * IDV_ATTEMPT_DENIED
+
 Version 18.0.0 (2025-04-21)
 **********************************************
 
