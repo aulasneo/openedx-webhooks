@@ -243,24 +243,25 @@ def badge_revoked_receiver(data, **kwargs):
     _process_event("BADGE_REVOKED", data, **kwargs)
 
 
-# def idv_attempt_created_receiver(data, **kwargs):
-# """Handle IDV_ATTEMPT_CREATED signal."""
-#     _process_event("IDV_ATTEMPT_CREATED", data, **kwargs)
-#
+def idv_attempt_created_receiver(data, **kwargs):
+    """Handle IDV_ATTEMPT_CREATED signal."""
+    _process_event("IDV_ATTEMPT_CREATED", data, **kwargs)
 
-# def idv_attempt_pending_receiver(data, **kwargs):
-# """Handle IDV_ATTEMPT_PENDING signal."""
-#     _process_event("IDV_ATTEMPT_PENDING", data, **kwargs)
-#
 
-# def idv_attempt_approved_receiver(data, **kwargs):
-# """Handle IDV_ATTEMPT_APPROVED signal."""
-#     _process_event("IDV_ATTEMPT_APPROVED", data, **kwargs)
-#
+def idv_attempt_pending_receiver(data, **kwargs):
+    """Handle IDV_ATTEMPT_PENDING signal."""
+    _process_event("IDV_ATTEMPT_PENDING", data, **kwargs)
 
-# def idv_attempt_denied_receiver(data, **kwargs):
-# """Handle IDV_ATTEMPT_DENIED signal."""
-#     _process_event("IDV_ATTEMPT_DENIED", data, **kwargs)
+
+def idv_attempt_approved_receiver(data, **kwargs):
+    """Handle IDV_ATTEMPT_APPROVED signal."""
+    _process_event("IDV_ATTEMPT_APPROVED", data, **kwargs)
+
+
+def idv_attempt_denied_receiver(data, **kwargs):
+    """Handle IDV_ATTEMPT_DENIED signal."""
+    _process_event("IDV_ATTEMPT_DENIED", data, **kwargs)
+
 
 #
 # Course authoring
@@ -364,21 +365,21 @@ def library_collection_deleted_receiver(data, **kwargs):
     _process_event("LIBRARY_COLLECTION_DELETED", data, **kwargs)
 
 
-def library_container_created_receiver(data, **kwargs):
-    """Handle LIBRARY_CONTAINER_CREATED signal."""
-    _process_event("LIBRARY_CONTAINER_CREATED", data, **kwargs)
-
-
-def library_container_updated_receiver(data, **kwargs):
-    """Handle LIBRARY_CONTAINER_UPDATED signal."""
-    _process_event("LIBRARY_CONTAINER_UPDATED", data, **kwargs)
-
-
-def library_container_deleted_receiver(data, **kwargs):
-    """Handle LIBRARY_CONTAINER_DELETED signal."""
-    _process_event("LIBRARY_CONTAINER_DELETED", data, **kwargs)
-
-
-def course_import_completed_receiver(data, **kwargs):
-    """Handle COURSE_IMPORT_COMPLETED signal."""
-    _process_event("COURSE_IMPORT_COMPLETED", data, **kwargs)
+# def library_container_created_receiver(data, **kwargs):
+#     """Handle LIBRARY_CONTAINER_CREATED signal."""
+#     _process_event("LIBRARY_CONTAINER_CREATED", data, **kwargs)
+#
+#
+# def library_container_updated_receiver(data, **kwargs):
+#     """Handle LIBRARY_CONTAINER_UPDATED signal."""
+#     _process_event("LIBRARY_CONTAINER_UPDATED", data, **kwargs)
+#
+#
+# def library_container_deleted_receiver(data, **kwargs):
+#     """Handle LIBRARY_CONTAINER_DELETED signal."""
+#     _process_event("LIBRARY_CONTAINER_DELETED", data, **kwargs)
+#
+#
+# def course_import_completed_receiver(data, **kwargs):
+#     """Handle COURSE_IMPORT_COMPLETED signal."""
+#     _process_event("COURSE_IMPORT_COMPLETED", data, **kwargs)

@@ -36,6 +36,8 @@ from openedx_filters.learning.filters import (
     CourseUnenrollmentStarted,
     DashboardRenderStarted,
     InstructorDashboardRenderStarted,
+    ORASubmissionViewRenderStarted,
+    RenderXBlockStarted,
     StudentLoginRequested,
     StudentRegistrationRequested,
     VerticalBlockChildRenderStarted,
@@ -46,14 +48,6 @@ from .models import Webfilter
 from .utils import object_serializer, send
 
 # In Sumac add:
-# RenderXBlockStarted,
-# CourseHomeUrlCreationStarted,
-# CourseEnrollmentAPIRenderStarted,
-# CourseRunAPIRenderStarted,
-# ORASubmissionViewRenderStarted,
-# IDVPageURLRequested,
-# CourseAboutPageURLRequested,
-# ScheduleQuerySetRequested,
 
 logger = logging.getLogger(__name__)
 
@@ -246,7 +240,8 @@ def _check_for_exception(exceptions, exception_class):
         if exception_class in [
             CertificateRenderStarted.RenderCustomResponse,
             CourseAboutRenderStarted.RenderCustomResponse,
-            DashboardRenderStarted.RenderCustomResponse
+            DashboardRenderStarted.RenderCustomResponse,
+            RenderXBlockStarted.RenderCustomResponse,
         ]:
             raise exception_class(
                 message="Render Custom Response",
@@ -1662,49 +1657,49 @@ class CourseEnrollmentQuerysetRequestedWebFilter(PipelineStep):
         return {}
 
 
-# class RenderXBlockStartedWebFilter(PipelineStep):
-#     """
-#     Filter in between context generation and rendering of XBlock scope.
-#
-#     Purpose:
-#         This filter is triggered when an XBlock is about to be rendered,
-#         just before the rendering process is completed
-#         allowing the filter to act on the context and student_view_context used to render the XBlock.
-#
-#     Filter Type:
-#         org.openedx.learning.xblock.render.started.v1
-#
-#     Trigger:
-#         - Repository: openedx/edx-platform
-#         - Path: lms/djangoapps/courseware/views/views.py
-#         - Function or Method: render_xblock
-#     """
-#
-#     def run_filter(self, **data):
-#         """
-#         :param data = context: dict[str, Any], student_view_context: dict
-#         """
-#         # The event is the class name, except the last "WebFilter"
-#         event = type(self).__name__[:-9]
-#
-#         return_data = data.copy()
-#         webfilters = Webfilter.objects.filter(enabled=True, event=event)
-#
-#         if webfilters:
-#             logger.info(f"Webfilter for {event} event.")
-#
-#             content, exceptions = _process_filter(webfilters=webfilters,
-#                                                   data=data,
-#                                                   exception=RenderXBlockStarted.PreventXBlockBlockRender)
-#
-#             return_data.update(content)
-#
-#             _check_for_exception(exceptions, RenderXBlockStarted.PreventXBlockBlockRender)
-#             _check_for_exception(exceptions, RenderXBlockStarted.RenderCustomResponse)
-#
-#             return return_data
-#
-#         return {}
+class RenderXBlockStartedWebFilter(PipelineStep):
+    """
+    Filter in between context generation and rendering of XBlock scope.
+
+    Purpose:
+        This filter is triggered when an XBlock is about to be rendered,
+        just before the rendering process is completed
+        allowing the filter to act on the context and student_view_context used to render the XBlock.
+
+    Filter Type:
+        org.openedx.learning.xblock.render.started.v1
+
+    Trigger:
+        - Repository: openedx/edx-platform
+        - Path: lms/djangoapps/courseware/views/views.py
+        - Function or Method: render_xblock
+    """
+
+    def run_filter(self, **data):
+        """
+        :param data = context: dict[str, Any], student_view_context: dict.
+        """
+        # The event is the class name, except the last "WebFilter"
+        event = type(self).__name__[:-9]
+
+        return_data = data.copy()
+        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+
+        if webfilters:
+            logger.info(f"Webfilter for {event} event.")
+
+            content, exceptions = _process_filter(webfilters=webfilters,
+                                                  data=data,
+                                                  exception=RenderXBlockStarted.PreventXBlockBlockRender)
+
+            return_data.update(content)
+
+            _check_for_exception(exceptions, RenderXBlockStarted.PreventXBlockBlockRender)
+            _check_for_exception(exceptions, RenderXBlockStarted.RenderCustomResponse)
+
+            return return_data
+
+        return {}
 
 
 class VerticalBlockRenderCompletedWebFilter(PipelineStep):
@@ -1941,217 +1936,209 @@ class InstructorDashboardRenderStartedWebFilter(PipelineStep):
         return {}
 
 
-# class ORASubmissionViewRenderStartedWebFilter(PipelineStep):
-#     """
-#     Filter used to modify the submission view rendering process.
-#
-#     Purpose:
-#         This filter is triggered when a user requests to view the submission,
-#         just before the page is rendered allowing
-#         the filter to act on the context and the template used to render the page.
-#
-#     Filter Type:
-#         org.openedx.learning.ora.submission_view.render.started.v1
-#
-#     Trigger:
-#         - Repository: openedx/edx-ora2
-#         - Path: openassessment/xblock/ui_mixins/legacy/views/submission.py
-#         - Function or Method: render_submission
-#     """
-#
-#     def run_filter(self, **data):
-#         """
-#         :param data = context: dict[str, Any], template_name: str
-#         """
-#
-#         # The event is the class name, except the last "WebFilter"
-#         event = type(self).__name__[:-9]
-#
-#         return_data = data.copy()
-#         webfilters = Webfilter.objects.filter(enabled=True, event=event)
-#
-#         if webfilters:
-#             logger.info(f"Webfilter for {event} event.")
-#
-#             content, exceptions = _process_filter(webfilters=webfilters,
-#                                                   data=data,
-#                                                   exception=ORASubmissionViewRenderStarted.RenderInvalidTemplate)
-#
-#             return_data.update(content)
-#
-#             _check_for_exception(exceptions, ORASubmissionViewRenderStarted.RenderInvalidTemplate)
-#
-#             return return_data
-#
-#         return {}
-#
-#
-# class IDVPageURLRequestedWebFilter(PipelineStep):
-#     """
-#     Filter used to act on ID verification page URL requests.
-#
-#     Purpose:
-#         This filter is triggered when a user requests to view the ID verification page,
-#         just before the page is rendered
-#         allowing the filter to act on the URL of the page.
-#
-#     Filter Type:
-#         org.openedx.learning.idv.page.url.requested.v1
-#
-#     Trigger:
-#         - Repository: openedx/edx-platform
-#         - Path: lms/djangoapps/verify_student/services.py
-#         - Function or Method: XBlockVerificationService.get_verify_location
-#     """
-#
-#     def run_filter(self, **data):
-#         """
-#         :param data = url: str
-#         """
-#         # The event is the class name, except the last "WebFilter"
-#         event = type(self).__name__[:-9]
-#
-#         return_data = data.copy()
-#         webfilters = Webfilter.objects.filter(enabled=True, event=event)
-#
-#         if webfilters:
-#             logger.info(f"Webfilter for {event} event.")
-#
-#             content, exceptions = _process_filter(webfilters=webfilters,
-#                                                   data=data)
-#
-#             return_data.update(content)
-#
-#             return return_data
-#
-#         return data
-#
-#
-# class CourseAboutPageURLRequestedWebFilter(PipelineStep):
-#     """
-#     Filter used to act on course about page URL requests.
-#
-#     Purpose:
-#         This filter is triggered when a user requests to view the course about page, just before the page is rendered
-#         allowing the filter to act on the URL of the page and the course org.
-#
-#     Filter Type:
-#         org.openedx.learning.course_about.page.url.requested.v1
-#
-#     Trigger:
-#         - Repository: openedx/edx-platform
-#         - Path: common/djangoapps/util/course.py
-#         - Function or Method: get_link_for_about_page
-#      """
-#
-#     def run_filter(self, **data):
-#         """
-#         :param data = url: str, org: str
-#         """
-#
-#         # The event is the class name, except the last "WebFilter"
-#         event = type(self).__name__[:-9]
-#
-#         return_data = data.copy()
-#         webfilters = Webfilter.objects.filter(enabled=True, event=event)
-#
-#         if webfilters:
-#             logger.info(f"Webfilter for {event} event.")
-#
-#             content, exceptions = _process_filter(webfilters=webfilters,
-#                                                   data=data)
-#
-#             return_data.update(content)
-#
-#             return return_data
-#
-#         return data
-#
-#
-#
-# class ScheduleQuerySetRequestedWebFilter(PipelineStep):
-#     """
-#     Filter used to apply additional filtering to a given QuerySet of Schedules.
-#
-#     Purpose:
-#         This filter is triggered when a QuerySet of Schedules is requested,
-#         allowing the filter to act on the schedules
-#         data. If you want to know more about the Schedules feature, please refer to the official documentation:
-#             - https://github.com/openedx/edx-platform/tree/master/openedx/core/djangoapps/schedules#readme
-#
-#     Filter Type:
-#         org.openedx.learning.schedule.queryset.requested.v1
-#
-#     Trigger:
-#         - Repository: openedx/edx-platform
-#         - Path: openedx/core/djangoapps/schedules/resolvers.py
-#         - Function or Method: BinnedSchedulesBaseResolver.get_schedules_with_target_date_by_bin_and_orgs
-#     """
-#
-#     def run_filter(self, **data):
-#         """
-#         :param data = schedules: QuerySet
-#         """
-#
-#         # The event is the class name, except the last "WebFilter"
-#         event = type(self).__name__[:-9]
-#
-#         return_data = data.copy()
-#         return_data['schedules'] = list(data['schedules'].values())
-#
-#         webfilters = Webfilter.objects.filter(enabled=True, event=event)
-#
-#         if webfilters:
-#             logger.info(f"Webfilter for {event} event.")
-#
-#             content, exceptions = _process_filter(webfilters=webfilters,
-#                                                   data=data)
-#
-#             return_data['schedules'] = data['schedules'].filter(content.get('filter', {}))
-#
-#             return return_data
-#
-#         return data
-#
-#
-#     class LMSPageURLRequestedWebFilter(PipelineStep):
-#         """
-#         Filter used to modify the URL of the page requested by the user.
-#
-#         Purpose:
-#             This filter is triggered when a user loads a page in Studio that references an LMS page,
-#             allowing the filter to
-#             modify the URL of the page requested by the user.
-#
-#         Filter Type:
-#             org.openedx.content_authoring.lms.page.url.requested.v1
-#
-#         Trigger:
-#             - Repository: openedx/edx-platform
-#             - Path: cms/djangoapps/contentstore/asset_storage_handler.py
-#             - Function or Method: get_asset_json
-#         """
-#
-#         def run_filter(self, **data):
-#             """
-#             data = url: str, org: str
-#             """
-#
-#             # The event is the class name, except the last "WebFilter"
-#             event = type(self).__name__[:-9]
-#
-#             return_data = data.copy()
-#
-#             webfilters = Webfilter.objects.filter(enabled=True, event=event)
-#
-#             if webfilters:
-#                 logger.info(f"Webfilter for {event} event.")
-#
-#                 content, exceptions = _process_filter(webfilters=webfilters,
-#                                                       data=data)
-#
-#                 return_data.update(content)
-#
-#                 return return_data
-#
-#             return data
+class ORASubmissionViewRenderStartedWebFilter(PipelineStep):
+    """
+    Filter used to modify the submission view rendering process.
+
+    Purpose:
+        This filter is triggered when a user requests to view the submission,
+        just before the page is rendered allowing
+        the filter to act on the context and the template used to render the page.
+
+    Filter Type:
+        org.openedx.learning.ora.submission_view.render.started.v1
+
+    Trigger:
+        - Repository: openedx/edx-ora2
+        - Path: openassessment/xblock/ui_mixins/legacy/views/submission.py
+        - Function or Method: render_submission
+    """
+
+    def run_filter(self, **data):
+        """
+        :param data = context: dict[str, Any], template_name: str.
+        """
+        # The event is the class name, except the last "WebFilter"
+        event = type(self).__name__[:-9]
+
+        return_data = data.copy()
+        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+
+        if webfilters:
+            logger.info(f"Webfilter for {event} event.")
+
+            content, exceptions = _process_filter(webfilters=webfilters,
+                                                  data=data,
+                                                  exception=ORASubmissionViewRenderStarted.RenderInvalidTemplate)
+
+            return_data.update(content)
+
+            _check_for_exception(exceptions, ORASubmissionViewRenderStarted.RenderInvalidTemplate)
+
+            return return_data
+
+        return {}
+
+
+class IDVPageURLRequestedWebFilter(PipelineStep):
+    """
+    Filter used to act on ID verification page URL requests.
+
+    Purpose:
+        This filter is triggered when a user requests to view the ID verification page,
+        just before the page is rendered
+        allowing the filter to act on the URL of the page.
+
+    Filter Type:
+        org.openedx.learning.idv.page.url.requested.v1
+
+    Trigger:
+        - Repository: openedx/edx-platform
+        - Path: lms/djangoapps/verify_student/services.py
+        - Function or Method: XBlockVerificationService.get_verify_location
+    """
+
+    def run_filter(self, **data):
+        """
+        :param data = url: str.
+        """
+        # The event is the class name, except the last "WebFilter"
+        event = type(self).__name__[:-9]
+
+        return_data = data.copy()
+        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+
+        if webfilters:
+            logger.info(f"Webfilter for {event} event.")
+
+            content, _ = _process_filter(webfilters=webfilters, data=data)
+
+            return_data.update(content)
+
+            return return_data
+
+        return {}
+
+
+class CourseAboutPageURLRequestedWebFilter(PipelineStep):
+    """
+    Filter used to act on course about page URL requests.
+
+    Purpose:
+        This filter is triggered when a user requests to view the course about page, just before the page is rendered
+        allowing the filter to act on the URL of the page and the course org.
+
+    Filter Type:
+        org.openedx.learning.course_about.page.url.requested.v1
+
+    Trigger:
+        - Repository: openedx/edx-platform
+        - Path: common/djangoapps/util/course.py
+        - Function or Method: get_link_for_about_page
+    """
+
+    def run_filter(self, **data):
+        """
+        :param data = url: str, org: str.
+        """
+        # The event is the class name, except the last "WebFilter"
+        event = type(self).__name__[:-9]
+
+        return_data = data.copy()
+        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+
+        if webfilters:
+            logger.info(f"Webfilter for {event} event.")
+
+            content, _ = _process_filter(webfilters=webfilters, data=data)
+
+            return_data.update(content)
+
+            return return_data
+
+        return {}
+
+
+class ScheduleQuerySetRequestedWebFilter(PipelineStep):
+    """
+    Filter used to apply additional filtering to a given QuerySet of Schedules.
+
+    Purpose:
+        This filter is triggered when a QuerySet of Schedules is requested,
+        allowing the filter to act on the schedules
+        data. If you want to know more about the Schedules feature, please refer to the
+        `official documentation
+        <https://github.com/openedx/edx-platform/tree/master/openedx/core/djangoapps/schedules#readme>`_
+
+    Filter Type:
+        org.openedx.learning.schedule.queryset.requested.v1
+
+    Trigger:
+        - Repository: openedx/edx-platform
+        - Path: openedx/core/djangoapps/schedules/resolvers.py
+        - Function or Method: BinnedSchedulesBaseResolver.get_schedules_with_target_date_by_bin_and_orgs
+    """
+
+    def run_filter(self, **data):
+        """
+        :param data = schedules: QuerySet.
+        """
+        # The event is the class name, except the last "WebFilter"
+        event = type(self).__name__[:-9]
+
+        return_data = data.copy()
+        return_data['schedules'] = list(data['schedules'].values())
+
+        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+
+        if webfilters:
+            logger.info(f"Webfilter for {event} event.")
+
+            content, _ = _process_filter(webfilters=webfilters, data=data)
+
+            return_data['schedules'] = data['schedules'].filter(content.get('filter', {}))
+
+            return return_data
+
+        return {}
+
+
+class LMSPageURLRequestedWebFilter(PipelineStep):
+    """
+    Filter used to modify the URL of the page requested by the user.
+
+    Purpose:
+        This filter is triggered when a user loads a page in Studio that references an LMS page,
+        allowing the filter to
+        modify the URL of the page requested by the user.
+
+    Filter Type:
+        org.openedx.content_authoring.lms.page.url.requested.v1
+
+    Trigger:
+        - Repository: openedx/edx-platform
+        - Path: cms/djangoapps/contentstore/asset_storage_handler.py
+        - Function or Method: get_asset_json
+    """
+
+    def run_filter(self, **data):
+        """
+        :param data = url: str, org: str.
+        """
+        # The event is the class name, except the last "WebFilter"
+        event = type(self).__name__[:-9]
+
+        return_data = data.copy()
+
+        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+
+        if webfilters:
+            logger.info(f"Webfilter for {event} event.")
+
+            content, _ = _process_filter(webfilters=webfilters, data=data)
+
+            return_data.update(content)
+
+            return return_data
+
+        return {}
