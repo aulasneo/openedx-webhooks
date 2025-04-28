@@ -1,7 +1,7 @@
 Change Log
 ##########
 
-Unreleased
+Version 19.0.0 (2025-04-28)
 **********************************************
 
 * Feat: Add new filters for Sumac:
