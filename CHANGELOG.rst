@@ -1,7 +1,7 @@
 Change Log
 ##########
 
-Unreleased
+Version 19.0.1 (2025-05-08)
 **********************************************
 
 Fix signal argument names.
