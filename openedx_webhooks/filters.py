@@ -73,7 +73,7 @@ def fix_dict_keys(d: dict):
     return r
 
 
-def _process_filter(webfilters, data, exception=None):
+def _process_filter(webfilters, data, exception=None):  # pylint: disable=too-many-statements
     """
     Process all events with user data.
     """

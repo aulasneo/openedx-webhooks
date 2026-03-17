@@ -1,7 +1,7 @@
 Change Log
 ##########
 
-Version 20.0.0 (2026-03-17)
+Unreleased
 **********************************************
 
 * Add Open edX Teak compatibility.
