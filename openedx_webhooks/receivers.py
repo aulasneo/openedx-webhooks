@@ -29,7 +29,11 @@ def _process_event(event_name, data, **kwargs):
             'event_metadata': asdict(kwargs.get("metadata")),
         }
         logger.warning(payload)
-        send(webhook.webhook_url, payload, www_form_urlencoded=False)
+        send(
+            webhook.webhook_url,
+            payload,
+            www_form_urlencoded=webhook.use_www_form_encoding,
+        )
 
 
 def session_login_completed_receiver(user, **kwargs):

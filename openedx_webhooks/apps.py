@@ -96,12 +96,23 @@ class WebhooksConfig(AppConfig):
                 "common": {"relative_path": "settings.common"},
                 "test": {"relative_path": "settings.test"},
             },
+            "cms.djangoapp": {
+                "common": {"relative_path": "settings.cms"},
+                "test": {"relative_path": "settings.cms"},
+            },
         },
         "signals_config": {
             "lms.djangoapp": {
                 "relative_path": "receivers",
                 "receivers": receivers,
-            }
+            },
+            "cms.djangoapp": {
+                "relative_path": "receivers",
+                "receivers": [
+                    receiver for receiver in receivers
+                    if receiver["signal_path"].startswith("openedx_events.content_authoring.")
+                ],
+            },
         },
     }
 

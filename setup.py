@@ -122,22 +122,25 @@ setup(
 
     include_package_data=True,
     install_requires=load_requirements('requirements/base.in'),
-    python_requires=">=3.8",
+    python_requires=">=3.11",
     license="AGPL 3.0",
     zip_safe=False,
     keywords='Openedx webhooks',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Framework :: Django',
-        'Framework :: Django :: 3.2',
+        'Framework :: Django :: 4.2',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)',
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.11',
     ],
     entry_points={
         "lms.djangoapp": [
+            "webhooks = openedx_webhooks.apps:WebhooksConfig",
+        ],
+        "cms.djangoapp": [
             "webhooks = openedx_webhooks.apps:WebhooksConfig",
         ],
     },

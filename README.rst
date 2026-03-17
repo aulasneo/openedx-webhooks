@@ -215,7 +215,7 @@ One Time Setup
 
   # Set up a virtualenv with the same name as the repo and activate it
   # Here's how you might do that if you have virtualenvwrapper setup.
-  mkvirtualenv -p python3.8 openedx-webhooks
+  mkvirtualenv -p python3.11 openedx-webhooks
 
 
 Every time you develop something in this repo

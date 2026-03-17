@@ -102,7 +102,11 @@ def _process_filter(webfilters, data, exception=None):
 
         try:
             # Send the request to the webhook URL
-            response = send(webfilter.webhook_url, payload)
+            response = send(
+                webfilter.webhook_url,
+                payload,
+                www_form_urlencoded=webfilter.use_www_form_encoding,
+            )
 
         except requests.exceptions.RequestException as e:
             if webfilter.halt_on_request_exception and exception:
@@ -114,7 +118,7 @@ def _process_filter(webfilters, data, exception=None):
                 ) from e
             logger.info(f"Not halting on request exception '{e}'."
                         f"{webfilter.event} webhook filter triggered to {webfilter.webhook_url}")
-            return None, None
+            continue
 
         if 400 <= response.status_code <= 499 and webfilter.halt_on_4xx and exception:
             logger.info(f"Request to {webfilter.webhook_url} after webhook event {webfilter.event} returned status "
@@ -467,7 +471,7 @@ class StudentRegistrationRequestedWebFilter(PipelineStep):
                                                   data=form_data,
                                                   exception=StudentRegistrationRequested.PreventRegistration)
 
-            form_data_response = content.get('form_data')
+            form_data_response = content.get('form_data') or {}
 
             # Validate form data response
             if 'level_of_education' in form_data_response \
@@ -1029,7 +1033,7 @@ class CertificateRenderStartedWebFilter(PipelineStep):
             update_object(custom_template, content.get('custom_template'))
 
             if 'context' in content:
-                context.update(content.get('context'))
+                context.update(content.get('context', {}))
 
             _check_for_exception(exceptions, CertificateRenderStarted.RedirectToPage)
             _check_for_exception(exceptions, CertificateRenderStarted.RenderAlternativeInvalidCertificate)
@@ -1554,7 +1558,7 @@ class DashboardRenderStartedWebFilter(PipelineStep):
                                                   data=data,
                                                   exception=DashboardRenderStarted.RedirectToPage)
 
-            context.update(content.get('context'))
+            context.update(content.get('context', {}))
 
             _check_for_exception(exceptions, DashboardRenderStarted.RedirectToPage)
             _check_for_exception(exceptions, DashboardRenderStarted.RenderCustomResponse)

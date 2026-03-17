@@ -20,10 +20,12 @@ def send(url, payload, www_form_urlencoded: bool = False):
     if www_form_urlencoded:
         headers = {'Content-type': 'application/x-www-form-urlencoded', 'Accept': 'text/plain'}
         payload = flatten_dict(payload)
+        data = payload
     else:
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        data = json.dumps(payload, default=str)
 
-    r = requests.post(url, data=json.dumps(payload, default=str), headers=headers, timeout=10)
+    r = requests.post(url, data=data, headers=headers, timeout=10)
 
     return r
 
