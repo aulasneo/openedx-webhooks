@@ -9,6 +9,8 @@ Purpose
 
 Webhooks for Open edX
 
+Current compatibility target: Open edX Teak / Tutor 20.x.
+
 This plugin implements a generic case of events handling that
 trigger a request to a configurable URL when a signal is received.
 
@@ -39,6 +41,8 @@ to the ``OPENEDX_EXTRA_PIP_REQUIREMENTS`` list in the ``config.yml`` file.
     OPENEDX_EXTRA_PIP_REQUIREMENTS:
     - openedx-webhooks
 
+This release targets Open edX Teak and Tutor 20.x, which use Python 3.11.
+
 If it is an existing installation, you might need to run migrations to create
 the database table. For this, run:
 
@@ -46,11 +50,15 @@ the database table. For this, run:
 
      tutor {dev|local|k8s} exec lms ./manage.py lms migrate
 
+This plugin now registers extension points in both LMS and CMS. Webhook and
+webfilter configuration is still managed through Django admin and the same
+database tables.
+
 Configuring
 ===========
 
 A new section named `OPENEDX_WEBHOOKS` will be available in the LMS Django
-admin site. It will contain two subsections: `Webhooks` and `Webfilters`.
+admin site. It contains two subsections: `Webhooks` and `Webfilters`.
 Add a new webhook to define the URLs that will be called after each event is
 received. More than one URL can be configured for each event. In this case,
 all URLs will be called.
@@ -174,8 +182,25 @@ Developing
 More information about available signals can be found in the `events documentation`_
 and the `filters documentation`_
 
-.. _events documentation: https://github.com/openedx/edx-platform/blob/master/docs/guides/hooks/events.rst
-.. _filters documentation: https://github.com/openedx/edx-platform/blob/master/docs/guides/hooks/filters.rst
+Teak compatibility in this package is aligned with:
+
+* ``openedx-filters==2.0.1``
+* ``openedx-events==10.2.0``
+
+Supported Teak-only additions in this release include:
+
+* Filter: ``AccountSettingsRenderStarted``
+* Signals:
+    * ``EXTERNAL_GRADER_SCORE_SUBMITTED``
+    * ``LIBRARY_BLOCK_PUBLISHED``
+    * ``LIBRARY_CONTAINER_CREATED``
+    * ``LIBRARY_CONTAINER_UPDATED``
+    * ``LIBRARY_CONTAINER_DELETED``
+    * ``LIBRARY_CONTAINER_PUBLISHED``
+    * ``COURSE_IMPORT_COMPLETED``
+
+.. _events documentation: https://github.com/openedx/edx-platform/blob/release/teak/docs/guides/hooks/events.rst
+.. _filters documentation: https://github.com/openedx/edx-platform/blob/release/teak/docs/guides/hooks/filters.rst
 
 
 Adding more filters
@@ -185,7 +210,7 @@ From version to version new filters are added to Open edX.
 The complete list of filters and their definition can be found in filters.py at
 the `openedx-filter repo`_.
 
-.. _openedx-filter repo: https://github.com/openedx/openedx-filters/blob/main/openedx_filters/learning/filters.py
+.. _openedx-filter repo: https://github.com/openedx/openedx-filters/blob/v2.0.1/openedx_filters/learning/filters.py
 
 To add a new filter, create the filter class handler in ``filters.py``
 containing the ``run_filter`` function. Then add a block in ``common.py``
@@ -200,7 +225,7 @@ The complete list of events and their definition can be found in ``signals.py``
 in different folders at the `openedx-events repo`_,
 depending on their category.
 
-.. _openedx-events repo: https://github.com/openedx/openedx-events/tree/main/openedx_events
+.. _openedx-events repo: https://github.com/openedx/openedx-events/tree/v10.2.0/openedx_events
 
 To add a new event hook, add the signal to the ``signals`` dict in ``apps.py``.
 Then add the corresponding block to ``receivers.py``.
@@ -253,6 +278,13 @@ Every time you develop something in this repo
   git push
 
   # Open a PR and ask for review.
+
+Releasing
+---------
+
+PyPI publishing uses GitHub Actions with PyPI trusted publishing.
+The release workflow no longer uses a long-lived PyPI API token. Configure the
+project's trusted publisher in PyPI before cutting a GitHub release.
 
 Getting Help
 ************

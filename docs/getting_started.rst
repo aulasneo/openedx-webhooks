@@ -11,8 +11,9 @@ Install dependencies
 ********************
 Dependencies can be installed via the command below.
 
+This project targets Open edX Teak / Tutor 20.x and expects Python 3.11.
+
 .. code-block:: bash
 
     $ make requirements
-
 

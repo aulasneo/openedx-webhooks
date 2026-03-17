@@ -26,6 +26,7 @@ from lms.djangoapps.courseware.courses import get_course_blocks_completion_summa
 from opaque_keys.edx.keys import CourseKey
 from openedx_filters import PipelineStep
 from openedx_filters.learning.filters import (
+    AccountSettingsRenderStarted,
     CertificateCreationRequested,
     CertificateRenderStarted,
     CohortAssignmentRequested,
@@ -499,6 +500,53 @@ class StudentRegistrationRequestedWebFilter(PipelineStep):
             _check_for_exception(exceptions, StudentRegistrationRequested.PreventRegistration)
 
             return {"form_data": updated_form_data}
+
+        return {}
+
+
+class AccountSettingsRenderStartedWebFilter(PipelineStep):
+    """
+    Process AccountSettingsRenderStarted filter.
+
+    This filter is triggered before the legacy account settings page is rendered.
+    """
+
+    def run_filter(self, context, template_name):  # pylint: disable=arguments-differ
+        """
+        Execute a filter with the signature specified.
+
+        Arguments:
+            context (dict): context dictionary for the account settings template.
+            template_name (str): template name to be rendered by the account settings page.
+        """
+        event = "AccountSettingsRenderStarted"
+
+        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+
+        if webfilters:
+            logger.info(f"Webfilter for {event} event.")
+
+            data = {
+                "context": context,
+                "template_name": template_name,
+            }
+
+            content, exceptions = _process_filter(
+                webfilters=webfilters,
+                data=data,
+                exception=AccountSettingsRenderStarted.RedirectToPage,
+            )
+
+            context.update(content.get('context', {}))
+
+            _check_for_exception(exceptions, AccountSettingsRenderStarted.RedirectToPage)
+            _check_for_exception(exceptions, AccountSettingsRenderStarted.RenderCustomResponse)
+            _check_for_exception(exceptions, AccountSettingsRenderStarted.RenderInvalidAccountSettings)
+
+            return {
+                "context": context,
+                "template_name": content.get('template_name') or template_name,
+            }
 
         return {}
 

@@ -18,6 +18,7 @@ def test_common_plugin_settings_registers_filters():
     common.plugin_settings(settings)
 
     assert "org.openedx.learning.student.login.requested.v1" in settings.OPEN_EDX_FILTERS_CONFIG
+    assert "org.openedx.learning.student.settings.render.started.v1" in settings.OPEN_EDX_FILTERS_CONFIG
     assert "org.openedx.learning.schedule.queryset.requested.v1" in settings.OPEN_EDX_FILTERS_CONFIG
 
 

@@ -267,6 +267,11 @@ def idv_attempt_denied_receiver(idv_attempt, **kwargs):
     _process_event("IDV_ATTEMPT_DENIED", idv_attempt, **kwargs)
 
 
+def external_grader_score_submitted_receiver(score, **kwargs):
+    """Handle EXTERNAL_GRADER_SCORE_SUBMITTED signal."""
+    _process_event("EXTERNAL_GRADER_SCORE_SUBMITTED", score, **kwargs)
+
+
 #
 # Course authoring
 def course_catalog_info_changed_receiver(catalog_info, **kwargs):
@@ -344,6 +349,11 @@ def library_block_deleted_receiver(library_block, **kwargs):
     _process_event("LIBRARY_BLOCK_DELETED", library_block, **kwargs)
 
 
+def library_block_published_receiver(library_block, **kwargs):
+    """Handle LIBRARY_BLOCK_PUBLISHED signal."""
+    _process_event("LIBRARY_BLOCK_PUBLISHED", library_block, **kwargs)
+
+
 def content_object_associations_changed_receiver(content_object, **kwargs):
     """Handle CONTENT_OBJECT_ASSOCIATIONS_CHANGED signal."""
     _process_event("CONTENT_OBJECT_ASSOCIATIONS_CHANGED", content_object, **kwargs)
@@ -369,21 +379,26 @@ def library_collection_deleted_receiver(library_collection, **kwargs):
     _process_event("LIBRARY_COLLECTION_DELETED", library_collection, **kwargs)
 
 
-# def library_container_created_receiver(data, **kwargs):
-#     """Handle LIBRARY_CONTAINER_CREATED signal."""
-#     _process_event("LIBRARY_CONTAINER_CREATED", data, **kwargs)
-#
-#
-# def library_container_updated_receiver(data, **kwargs):
-#     """Handle LIBRARY_CONTAINER_UPDATED signal."""
-#     _process_event("LIBRARY_CONTAINER_UPDATED", data, **kwargs)
-#
-#
-# def library_container_deleted_receiver(data, **kwargs):
-#     """Handle LIBRARY_CONTAINER_DELETED signal."""
-#     _process_event("LIBRARY_CONTAINER_DELETED", data, **kwargs)
-#
-#
-# def course_import_completed_receiver(data, **kwargs):
-#     """Handle COURSE_IMPORT_COMPLETED signal."""
-#     _process_event("COURSE_IMPORT_COMPLETED", data, **kwargs)
+def library_container_created_receiver(library_container, **kwargs):
+    """Handle LIBRARY_CONTAINER_CREATED signal."""
+    _process_event("LIBRARY_CONTAINER_CREATED", library_container, **kwargs)
+
+
+def library_container_updated_receiver(library_container, **kwargs):
+    """Handle LIBRARY_CONTAINER_UPDATED signal."""
+    _process_event("LIBRARY_CONTAINER_UPDATED", library_container, **kwargs)
+
+
+def library_container_deleted_receiver(library_container, **kwargs):
+    """Handle LIBRARY_CONTAINER_DELETED signal."""
+    _process_event("LIBRARY_CONTAINER_DELETED", library_container, **kwargs)
+
+
+def library_container_published_receiver(library_container, **kwargs):
+    """Handle LIBRARY_CONTAINER_PUBLISHED signal."""
+    _process_event("LIBRARY_CONTAINER_PUBLISHED", library_container, **kwargs)
+
+
+def course_import_completed_receiver(course, **kwargs):
+    """Handle COURSE_IMPORT_COMPLETED signal."""
+    _process_event("COURSE_IMPORT_COMPLETED", course, **kwargs)

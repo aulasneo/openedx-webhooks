@@ -5,7 +5,9 @@ Testing
 
 openedx_webhooks has an assortment of test cases and code quality
 checks to catch potential problems during development.  To run them all in the
-version of Python you chose for your virtualenv:
+version of Python you chose for your virtualenv.
+
+For Teak compatibility, use Python 3.11:
 
 .. code-block:: bash
 

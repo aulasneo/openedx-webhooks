@@ -1,6 +1,31 @@
 Change Log
 ##########
 
+Version 20.0.0 (2026-03-17)
+**********************************************
+
+* Add Open edX Teak compatibility.
+* Align runtime and packaging metadata with Teak and Tutor 20:
+    * Python 3.11
+    * Django 4.2
+    * openedx-filters 2.0.1
+    * openedx-events 10.2.0
+    * edx-opaque-keys 3.0.0
+* Fix non-halting webfilter request failures so they no longer crash the caller.
+* Fix ``Use WWW form encoding`` to send actual form-encoded payloads and honor the setting in both webhooks and webfilters.
+* Register the plugin for both LMS and CMS, including the Studio ``LMSPageURLRequested`` filter.
+* Add Teak-era missing filter support:
+    * AccountSettingsRenderStarted
+* Add Teak-era missing signal receivers:
+    * EXTERNAL_GRADER_SCORE_SUBMITTED
+    * LIBRARY_BLOCK_PUBLISHED
+    * LIBRARY_CONTAINER_CREATED
+    * LIBRARY_CONTAINER_UPDATED
+    * LIBRARY_CONTAINER_DELETED
+    * LIBRARY_CONTAINER_PUBLISHED
+    * COURSE_IMPORT_COMPLETED
+* Update PyPI publishing workflow to use PyPI trusted publishing.
+
 Version 19.0.1 (2025-05-08)
 **********************************************
 
