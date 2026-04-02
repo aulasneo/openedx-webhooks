@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## Version 21.0.0 (2026-04-02)
 
 - Add Open edX Ulmo compatibility.
 - Align runtime and packaging metadata with Ulmo and Tutor 21:
