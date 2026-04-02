@@ -34,6 +34,7 @@ signals = {
         "LIBRARY_CONTAINER_DELETED",
         "LIBRARY_CONTAINER_PUBLISHED",
         "COURSE_IMPORT_COMPLETED",
+        "COURSE_RERUN_COMPLETED",
     ],
     "learning": [
         "STUDENT_REGISTRATION_COMPLETED",
@@ -72,6 +73,7 @@ signals = {
         "IDV_ATTEMPT_APPROVED",
         "IDV_ATTEMPT_DENIED",
         "EXTERNAL_GRADER_SCORE_SUBMITTED",
+        "LTI_PROVIDER_LAUNCH_SUCCESS",
     ]
 }
 

@@ -2,6 +2,8 @@
 Tests for plugin settings helpers.
 """
 
+from openedx_webhooks import receivers
+from openedx_webhooks.apps import signals
 from openedx_webhooks.settings import cms, common
 
 
@@ -12,7 +14,7 @@ class Settings:
 
 
 def test_common_plugin_settings_registers_filters():
-    """Common settings register Teak LMS filters."""
+    """Common settings register Ulmo LMS filters."""
     settings = Settings()
 
     common.plugin_settings(settings)
@@ -39,3 +41,17 @@ def test_cms_plugin_settings_merges_existing_pipeline():
         "existing.pipeline.Step",
         "openedx_webhooks.filters.LMSPageURLRequestedWebFilter",
     ]
+
+
+def test_ulmo_signal_catalog_includes_new_upstream_events():
+    """Ulmo signal catalog includes the newly added upstream events."""
+    assert "COURSE_RERUN_COMPLETED" in signals["content_authoring"]
+    assert "LTI_PROVIDER_LAUNCH_SUCCESS" in signals["learning"]
+
+
+def test_all_declared_signals_have_matching_receiver_exports():
+    """Every declared signal is backed by a receiver function export."""
+    for signal_group in signals.values():
+        for signal_name in signal_group:
+            receiver_name = f"{signal_name.lower()}_receiver"
+            assert hasattr(receivers, receiver_name), receiver_name

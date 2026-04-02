@@ -1,0 +1,51 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - "release/**"
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Existing tag to release, for example release/v21.0.0"
+        required: true
+        type: string
+
+jobs:
+  create_release:
+    name: create release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Verify tag commit is on main
+        env:
+          TAG_NAME: ${{ inputs.tag_name || github.ref_name }}
+        run: |
+          case "${TAG_NAME}" in
+            release/v*) ;;
+            *)
+              echo "Tag must start with release/v"
+              exit 1
+              ;;
+          esac
+          git fetch origin main --depth=1
+          git fetch --tags --force
+          TAG_COMMIT="$(git rev-list -n 1 "${TAG_NAME}")"
+          if ! git branch -r --contains "${TAG_COMMIT}" | grep -q "origin/main"; then
+            echo "Tag ${TAG_NAME} does not point to a commit on origin/main"
+            exit 1
+          fi
+          echo "RELEASE_NAME=${TAG_NAME#release/}" >> "$GITHUB_ENV"
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag_name || github.ref_name }}
+          generate_release_notes: true

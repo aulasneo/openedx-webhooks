@@ -103,7 +103,7 @@ if sys.argv[-1] == 'tag':
 
 def load_readme():
     """Load the README file."""
-    with io.open(os.path.join(HERE, "README.rst"), "rt", encoding="utf8") as f:
+    with io.open(os.path.join(HERE, "README.md"), "rt", encoding="utf8") as f:
         return f.read()
 
 
@@ -112,7 +112,7 @@ setup(
     version=VERSION,
     description="""Webhooks for Open edX""",
     long_description=load_readme(),
-    long_description_content_type="text/x-rst",
+    long_description_content_type="text/markdown",
     author='Aulasneo',
     author_email='andres@aulasneo.com',
     url='https://github.com/aulasneo/openedx-webhooks',
@@ -129,7 +129,7 @@ setup(
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Framework :: Django',
-        'Framework :: Django :: 4.2',
+        'Framework :: Django :: 5.2',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)',
         'Natural Language :: English',

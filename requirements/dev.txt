@@ -158,9 +158,9 @@ mccabe==0.7.0
     # via
     #   -r requirements/quality.txt
     #   pylint
-openedx-events==10.2.0
+openedx-events==10.5.0
     # via -r requirements/quality.txt
-openedx-filters==2.0.1
+openedx-filters==2.1.0
     # via -r requirements/quality.txt
 packaging==25.0
     # via
