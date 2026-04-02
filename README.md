@@ -1,11 +1,11 @@
 # Open edX Webhooks
 
 [![PyPI](https://img.shields.io/pypi/v/openedx-webhooks.svg)](https://pypi.python.org/pypi/openedx-webhooks/)
-[![CI](https://github.com/aulasneo/openedx-webhooks/workflows/Python%20CI/badge.svg?branch=master)](https://github.com/aulasneo/openedx-webhooks/actions)
-[![Codecov](https://codecov.io/github/aulasneo/openedx-webhooks/coverage.svg?branch=main)](https://codecov.io/github/aulasneo/openedx-webhooks?branch=master)
+[![CI](https://github.com/aulasneo/openedx-webhooks/workflows/Python%20CI/badge.svg?branch=main)](https://github.com/aulasneo/openedx-webhooks/actions)
+[![Codecov](https://codecov.io/github/aulasneo/openedx-webhooks/coverage.svg?branch=main)](https://codecov.io/github/aulasneo/openedx-webhooks?branch=main)
 [![Documentation](https://readthedocs.org/projects/openedx-webhooks/badge/?version=latest)](https://github.com/aulasneo/openedx-webhooks)
 [![Supported Python versions](https://img.shields.io/pypi/pyversions/openedx-webhooks.svg)](https://pypi.python.org/pypi/openedx-webhooks/)
-[![License](https://img.shields.io/github/license/aulasneo/openedx-webhooks.svg)](https://github.com/aulasneo/openedx-webhooks/blob/master/LICENSE.txt)
+[![License](https://img.shields.io/github/license/aulasneo/openedx-webhooks.svg)](https://github.com/aulasneo/openedx-webhooks/blob/main/LICENSE.txt)
 ![Status](https://img.shields.io/badge/Status-Maintained-brightgreen)
 
 ## Purpose
