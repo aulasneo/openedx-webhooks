@@ -272,6 +272,11 @@ def external_grader_score_submitted_receiver(score, **kwargs):
     _process_event("EXTERNAL_GRADER_SCORE_SUBMITTED", score, **kwargs)
 
 
+def lti_provider_launch_success_receiver(launch_data, **kwargs):
+    """Handle LTI_PROVIDER_LAUNCH_SUCCESS signal."""
+    _process_event("LTI_PROVIDER_LAUNCH_SUCCESS", launch_data, **kwargs)
+
+
 #
 # Course authoring
 def course_catalog_info_changed_receiver(catalog_info, **kwargs):
@@ -402,3 +407,8 @@ def library_container_published_receiver(library_container, **kwargs):
 def course_import_completed_receiver(course, **kwargs):
     """Handle COURSE_IMPORT_COMPLETED signal."""
     _process_event("COURSE_IMPORT_COMPLETED", course, **kwargs)
+
+
+def course_rerun_completed_receiver(course, **kwargs):
+    """Handle COURSE_RERUN_COMPLETED signal."""
+    _process_event("COURSE_RERUN_COMPLETED", course, **kwargs)

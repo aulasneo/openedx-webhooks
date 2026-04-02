@@ -1,9 +1,13 @@
 name: Publish
 
 on:
-  release:
-    types:
-      - published
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git ref to publish, for example main or release/v21.0.0"
+        required: true
+        default: "main"
+        type: string
 
 jobs:
   publish:
@@ -14,10 +18,12 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 

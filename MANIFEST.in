@@ -1,6 +1,6 @@
-include CHANGELOG.rst
+include CHANGELOG.md
 include LICENSE.txt
-include README.rst
+include README.md
 include requirements/base.in
 include requirements/constraints.txt
 recursive-include openedx_webhooks *.html *.png *.gif *.js *.css *.jpg *.jpeg *.svg
