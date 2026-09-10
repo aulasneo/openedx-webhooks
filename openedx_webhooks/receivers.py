@@ -3,6 +3,7 @@ Open edX signal events handler functions.
 """
 import logging
 
+import requests
 from attrs import asdict
 
 from .models import Webhook
@@ -16,24 +17,40 @@ def _process_event(event_name, data, **kwargs):
     Process all events with user data.
     """
     logger.debug(f"Processing event: {event_name}")
-    webhooks = Webhook.objects.filter(enabled=True, event=event_name)
+    webhooks = Webhook.objects.filter(enabled=True, event=event_name).order_by('pk')
 
     # Get the name of the data type
-    data_type = str(type(data)).split("'")[1]
+    data_type = f"{type(data).__module__}.{type(data).__qualname__}"
 
     for webhook in webhooks:
         logger.info(f"{event_name} webhook triggered to {webhook.webhook_url}")
 
         payload = {
             data_type: asdict(data, value_serializer=value_serializer),
-            'event_metadata': asdict(kwargs.get("metadata")),
+            'event_metadata': (
+                asdict(kwargs["metadata"])
+                if kwargs.get("metadata") is not None else {}
+            ),
         }
-        logger.warning(payload)
-        send(
-            webhook.webhook_url,
-            payload,
-            www_form_urlencoded=webhook.use_www_form_encoding,
-        )
+        try:
+            response = send(
+                webhook.webhook_url,
+                payload,
+                www_form_urlencoded=webhook.use_www_form_encoding,
+            )
+            response.raise_for_status()
+        except requests.exceptions.RequestException:
+            logger.warning("Webhook delivery failed for %s (configuration %s)", event_name, webhook.pk)
+
+
+def role_assignment_created_receiver(role_assignment, **kwargs):
+    """Handle ROLE_ASSIGNMENT_CREATED in both LMS and Studio."""
+    _process_event("ROLE_ASSIGNMENT_CREATED", role_assignment, **kwargs)
+
+
+def role_assignment_deleted_receiver(role_assignment, **kwargs):
+    """Handle ROLE_ASSIGNMENT_DELETED in both LMS and Studio."""
+    _process_event("ROLE_ASSIGNMENT_DELETED", role_assignment, **kwargs)
 
 
 def session_login_completed_receiver(user, **kwargs):

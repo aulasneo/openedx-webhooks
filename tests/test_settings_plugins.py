@@ -2,6 +2,8 @@
 Tests for plugin settings helpers.
 """
 
+from types import SimpleNamespace
+
 from openedx_webhooks import receivers
 from openedx_webhooks.apps import signals
 from openedx_webhooks.settings import cms, common
@@ -10,7 +12,8 @@ from openedx_webhooks.settings import cms, common
 class Settings:
     """Mutable settings stub."""
 
-    OPEN_EDX_FILTERS_CONFIG = {}
+    def __init__(self):
+        self.OPEN_EDX_FILTERS_CONFIG = {}
 
 
 def test_common_plugin_settings_registers_filters():
@@ -55,3 +58,20 @@ def test_all_declared_signals_have_matching_receiver_exports():
         for signal_name in signal_group:
             receiver_name = f"{signal_name.lower()}_receiver"
             assert hasattr(receivers, receiver_name), receiver_name
+
+
+def test_settings_are_idempotent_and_initialize_missing_config():
+    """Repeated initialization preserves settings and never duplicates deliveries."""
+    settings = SimpleNamespace()
+    common.plugin_settings(settings)
+    key = 'org.openedx.learning.instructor.dashboard.tabs.requested.v1'
+    settings.OPEN_EDX_FILTERS_CONFIG[key]['pipeline'].insert(0, 'another.plugin.Step')
+    settings.OPEN_EDX_FILTERS_CONFIG[key]['fail_silently'] = True
+    common.plugin_settings(settings)
+    cms.plugin_settings(settings)
+    assert settings.OPEN_EDX_FILTERS_CONFIG[key] == {
+        'pipeline': ['another.plugin.Step', 'openedx_webhooks.filters.InstructorDashboardTabsRequestedWebFilter'],
+        'fail_silently': True,
+    }
+    for config in settings.OPEN_EDX_FILTERS_CONFIG.values():
+        assert len(config['pipeline']) == len(set(config['pipeline']))

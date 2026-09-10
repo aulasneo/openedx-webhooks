@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: "Git ref to publish, for example main or release/v21.0.0"
+        description: "Git ref to publish, for example main or release/v22.0.0"
         required: true
         default: "main"
         type: string

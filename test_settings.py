@@ -42,11 +42,13 @@ LOCALE_PATHS = [
 ROOT_URLCONF = 'openedx_webhooks.urls'
 
 SECRET_KEY = 'insecure-secret-key'
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+USE_TZ = True
 
 MIDDLEWARE = (
+    'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
 )
 
 TEMPLATES = [{
@@ -54,6 +56,7 @@ TEMPLATES = [{
     'APP_DIRS': False,
     'OPTIONS': {
         'context_processors': [
+            'django.template.context_processors.request',
             'django.contrib.auth.context_processors.auth',  # this is required for admin
             'django.contrib.messages.context_processors.messages',  # this is required for admin
         ],

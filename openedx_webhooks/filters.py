@@ -16,13 +16,13 @@ StudentRegistrationRequested,
 import json
 import logging
 from datetime import datetime
+from inspect import Parameter, signature
 
 import requests.exceptions
-from common.djangoapps.student.models import UserProfile  # pylint: disable=import-error
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.http import HttpResponse
-from lms.djangoapps.courseware.courses import get_course_blocks_completion_summary  # pylint: disable=import-error
+from django.utils import timezone
 from opaque_keys.edx.keys import CourseKey
 from openedx_filters import PipelineStep
 from openedx_filters.learning.filters import (
@@ -37,6 +37,7 @@ from openedx_filters.learning.filters import (
     CourseUnenrollmentStarted,
     DashboardRenderStarted,
     InstructorDashboardRenderStarted,
+    InstructorDashboardTabsRequested,
     ORASubmissionViewRenderStarted,
     RenderXBlockStarted,
     StudentLoginRequested,
@@ -46,11 +47,16 @@ from openedx_filters.learning.filters import (
 )
 
 from .models import Webfilter
-from .utils import object_serializer, send
-
-# In Sumac add:
+from .utils import SENSITIVE_FIELDS, object_serializer, redact_sensitive_fields, send
 
 logger = logging.getLogger(__name__)
+
+
+def get_course_blocks_completion_summary(course_key, user):
+    """Load the LMS completion helper only when a certificate filter needs it."""
+    # pylint: disable=import-error,import-outside-toplevel
+    from lms.djangoapps.courseware import courses
+    return courses.get_course_blocks_completion_summary(course_key, user)
 
 
 def fix_dict_keys(d: dict):
@@ -73,24 +79,14 @@ def fix_dict_keys(d: dict):
     return r
 
 
-def _process_filter(webfilters, data, exception=None):  # pylint: disable=too-many-statements
+def _process_filter(webfilters, data, exception=None):
     """
     Process all events with user data.
     """
     response_data = {}
     response_exceptions = {}
 
-    # Convert model objects to dicts, and remove '_state'
-    payload = {}
-    for key, value in data.items():
-
-        if isinstance(value, models.Model):
-            payload[key] = value.__dict__.copy()
-            payload[key].pop('_state', None)
-        elif isinstance(value, dict):
-            payload[key] = fix_dict_keys(value)
-        else:
-            payload[key] = value
+    payload = object_serializer(data)
 
     for webfilter in webfilters:
         logger.info(f"{webfilter.event} webhook filter triggered to {webfilter.webhook_url}")
@@ -98,7 +94,7 @@ def _process_filter(webfilters, data, exception=None):  # pylint: disable=too-ma
         # Add event metadata
         payload['event_metadata'] = {
             'event_type': webfilter.event,
-            'time': str(datetime.now())
+            'time': timezone.now().isoformat()
         }
 
         try:
@@ -111,12 +107,11 @@ def _process_filter(webfilters, data, exception=None):  # pylint: disable=too-ma
 
         except requests.exceptions.RequestException as e:
             if webfilter.halt_on_request_exception and exception:
-                logger.info(f"Halting on request exception '{e.strerror}'. "
-                            f"{webfilter.event} webhook filter triggered to {webfilter.webhook_url}")
-                raise exception(
-                    message=e.strerror,
+                _raise_filter_exception(
+                    exception,
+                    message=str(e),
                     redirect_to=webfilter.redirect_on_request_exception,
-                ) from e
+                )
             logger.info(f"Not halting on request exception '{e}'."
                         f"{webfilter.event} webhook filter triggered to {webfilter.webhook_url}")
             continue
@@ -124,7 +119,8 @@ def _process_filter(webfilters, data, exception=None):  # pylint: disable=too-ma
         if 400 <= response.status_code <= 499 and webfilter.halt_on_4xx and exception:
             logger.info(f"Request to {webfilter.webhook_url} after webhook event {webfilter.event} returned status "
                         f"code {response.status_code} ({response.reason}). Redirecting to {webfilter.redirect_on_4xx}")
-            raise exception(
+            _raise_filter_exception(
+                exception,
                 message=f"Request to {webfilter.webhook_url} after webhook event {webfilter.event} returned status "
                         f"code {response.status_code} ({response.reason})",
                 redirect_to=webfilter.redirect_on_4xx,
@@ -134,7 +130,8 @@ def _process_filter(webfilters, data, exception=None):  # pylint: disable=too-ma
         if 500 <= response.status_code <= 599 and webfilter.halt_on_5xx and exception:
             logger.info(f"Request to {webfilter.webhook_url} after webhook event {webfilter.event} returned status "
                         f"code {response.status_code} ({response.reason}). Redirecting to {webfilter.redirect_on_5xx}")
-            raise exception(
+            _raise_filter_exception(
+                exception,
                 message=f"Request to {webfilter.webhook_url} after webhook event {webfilter.event} returned status "
                         f"code {response.status_code} ({response.reason})",
                 redirect_to=webfilter.redirect_on_5xx,
@@ -147,8 +144,12 @@ def _process_filter(webfilters, data, exception=None):  # pylint: disable=too-ma
         try:
             response = json.loads(response.text)
         except json.decoder.JSONDecodeError as e:
-            logger.warning(f"Non JSON response received from {webfilter.webhook_url}: '{response.text}' ({e})")
+            logger.warning("Non-JSON response for webfilter %s: %s", webfilter.event, type(e).__name__)
             response = {}
+
+        if not isinstance(response, dict):
+            logger.warning("Expected a JSON object for webfilter %s", webfilter.event)
+            continue
 
         if not webfilter.disable_filtering:
             # We need to accumulate the responses in case there are many webhook filters
@@ -157,8 +158,7 @@ def _process_filter(webfilters, data, exception=None):  # pylint: disable=too-ma
                 if isinstance(r, dict):
                     response_data.update(r)
                 else:
-                    logger.error(f"Web filter {webfilter.event} enabled but "
-                                 f"call to {webfilter.webhook_url} returned non dict 'data' key: {r}")
+                    logger.error("Web filter %s returned a non-dict 'data' key", webfilter.event)
             else:
                 logger.warning(f"Web filter {webfilter.event} enabled but "
                                f"call to {webfilter.webhook_url} returned no 'data' key.")
@@ -170,8 +170,7 @@ def _process_filter(webfilters, data, exception=None):  # pylint: disable=too-ma
                 if isinstance(r, dict):
                     response_exceptions.update(r)
                 else:
-                    logger.error(f"Web filter {webfilter.event} exceptions enabled but "
-                                 f"call to {webfilter.webhook_url} returned non dict 'exception' key: {r}")
+                    logger.error("Web filter %s returned a non-dict 'exception' key", webfilter.event)
             else:
                 logger.warning(f"Web filter {webfilter.event} exceptions enabled but "
                                f"call to {webfilter.webhook_url} returned no 'exception' key.")
@@ -179,18 +178,38 @@ def _process_filter(webfilters, data, exception=None):  # pylint: disable=too-ma
     return response_data, response_exceptions
 
 
+def _raise_filter_exception(exception_class, **kwargs):
+    """Pass only arguments accepted by the upstream exception constructor."""
+    parameters = signature(exception_class).parameters
+    if not any(parameter.kind == Parameter.VAR_KEYWORD for parameter in parameters.values()):
+        kwargs = {key: value for key, value in kwargs.items() if key in parameters}
+    raise exception_class(**kwargs)
+
+
+def _mutable_model_fields(instance):
+    """Identify model fields that a remote response may edit."""
+    protected = SENSITIVE_FIELDS | {'is_staff', 'is_superuser', 'is_active', 'last_login', 'date_joined'}
+    return {
+        field.name for field in instance._meta.concrete_fields
+        if not field.primary_key and not field.is_relation and field.name not in protected
+    }
+
+
 def update_model(instance, data):
-    """Update a model with data."""
+    """Update concrete model fields, excluding identity, relations and credentials."""
     if isinstance(data, dict):
+        allowed = _mutable_model_fields(instance)
+        changed = []
         for key, value in data.items():
-            if key != "id":  # Prevent changing the id of the object
-                logger.info(f"Updating {instance} with {key}={value}")
+            if key in allowed:
                 if isinstance(getattr(instance, key), datetime):
                     # Handle date time data
                     setattr(instance, key, datetime.fromisoformat(value))
                 else:
                     setattr(instance, key, value)
-        instance.save()
+                changed.append(key)
+        if changed:
+            instance.save(update_fields=changed)
 
 
 def update_query_dict(query_dict, data):
@@ -205,9 +224,13 @@ def update_query_dict(query_dict, data):
 
     if isinstance(data, dict):
         for key, value in data.items():
+            if key.lower() in SENSITIVE_FIELDS:
+                continue
             if isinstance(query_dict.get(key), datetime):
                 # Handle date time data
                 result[key] = datetime.fromisoformat(value)
+            elif isinstance(value, list) and hasattr(result, 'setlist'):
+                result.setlist(key, value)
             else:
                 result[key] = value
 
@@ -222,15 +245,24 @@ def update_object(o, data):
     try:
         if isinstance(data, dict):
             for key, value in data.items():
+                if key.lower() in SENSITIVE_FIELDS or key in {'id', 'pk', 'is_staff', 'is_superuser'}:
+                    continue
+                if isinstance(o, models.Model) and key not in _mutable_model_fields(o):
+                    continue
                 if isinstance(getattr(o, key), datetime):
                     # Handle date time data
                     setattr(o, key, datetime.fromisoformat(value))
                 elif isinstance(getattr(o, key), bool):
-                    setattr(o, key, value.lower() == 'true')
+                    if isinstance(value, bool):
+                        setattr(o, key, value)
+                    elif isinstance(value, str) and value.lower() in {'true', 'false'}:
+                        setattr(o, key, value.lower() == 'true')
+                    else:
+                        raise ValueError(f"Expected a boolean for {key}")
                 else:
                     setattr(o, key, value)
     except AttributeError as e:
-        logger.error(f"Error '{e} updating {o} with {data}")
+        logger.error("Cannot update object of type %s: %s", type(o).__name__, type(e).__name__)
 
 
 def _check_for_exception(exceptions, exception_class):
@@ -243,10 +275,12 @@ def _check_for_exception(exceptions, exception_class):
         # In the special case of CertificateRenderStarted.RenderCustomResponse the exception must include a
         # response object
         if exception_class in [
+            AccountSettingsRenderStarted.RenderCustomResponse,
             CertificateRenderStarted.RenderCustomResponse,
             CourseAboutRenderStarted.RenderCustomResponse,
             DashboardRenderStarted.RenderCustomResponse,
             RenderXBlockStarted.RenderCustomResponse,
+            InstructorDashboardRenderStarted.RenderCustomResponse,
         ]:
             raise exception_class(
                 message="Render Custom Response",
@@ -255,6 +289,7 @@ def _check_for_exception(exceptions, exception_class):
         if isinstance(exception_settings, str):
             raise exception_class(exception_settings)
         if isinstance(exception_settings, dict):
+            exception_settings = exception_settings.copy()
             if 'message' not in exception_settings:
                 exception_settings['message'] = ''
             raise exception_class(**exception_settings)
@@ -274,7 +309,6 @@ class StudentLoginRequestedWebFilter(PipelineStep):
         {
             "user": {
                 "id": 4,
-                "password": "pbkdf2_sha256$260000$W2SQQzln5u3i20SYeShEWx$4Y/Th225xS25wvWG1GyHpRAj2f3Ick4/a4jbAFvsudY=",
                 "last_login": "2023-06-07 20:26:39.890251+00:00",
                 "is_superuser": true,
                 "username": "myuser",
@@ -366,6 +400,7 @@ class StudentLoginRequestedWebFilter(PipelineStep):
                                                       },
                                                       exception=StudentLoginRequested.PreventLogin)
 
+                _check_for_exception(exceptions, StudentLoginRequested.PreventLogin)
                 update_model(user, content.get('user'))
                 update_model(user.profile, content.get('profile'))
             else:
@@ -466,10 +501,14 @@ class StudentRegistrationRequestedWebFilter(PipelineStep):
         webfilters = Webfilter.objects.filter(enabled=True, event=event)
 
         if webfilters:
-            logger.info(f"Webfilter for {event} event. Form data: {form_data}.")
+            from common.djangoapps.student.models import (  # pylint: disable=import-error,import-outside-toplevel
+                UserProfile,
+            )
+
+            logger.info("Webfilter for %s", event)
 
             content, exceptions = _process_filter(webfilters=webfilters,
-                                                  data=form_data,
+                                                  data=redact_sensitive_fields(dict(form_data.items())),
                                                   exception=StudentRegistrationRequested.PreventRegistration)
 
             form_data_response = content.get('form_data') or {}
@@ -490,7 +529,7 @@ class StudentRegistrationRequestedWebFilter(PipelineStep):
                                  ", ".join([f"{c[0]}: {c[1]}" for c in UserProfile.GENDER_CHOICES]))
 
             if 'terms_of_service' in form_data_response \
-                    and form_data_response.get('terms_of_service').lower() not in ["true", "false"]:
+                    and str(form_data_response.get('terms_of_service')).lower() not in ["true", "false"]:
                 raise ValueError(f"'{form_data_response.get('terms_of_service')}' is not a boolean value."
                                  f"Valid options are: " +
                                  ", ".join(["true", "false"]))
@@ -564,7 +603,6 @@ class CourseEnrollmentStartedWebFilter(PipelineStep):
         {
           "user": {
             "id": 4,
-            "password": "pbkdf2_sha256$260000$W2SQQzln5u3i20SYeShEWx$4Y/Th225xS25wvWG1GyHpRAj2f3Ick4/a4jbAFvsudY=",
             "last_login": "2023-06-13 15:04:10.629206+00:00",
             "is_superuser": true,
             "username": "andres",
@@ -659,6 +697,7 @@ class CourseEnrollmentStartedWebFilter(PipelineStep):
                                                   data=data,
                                                   exception=CourseEnrollmentStarted.PreventEnrollment)
 
+            _check_for_exception(exceptions, CourseEnrollmentStarted.PreventEnrollment)
             update_model(user, content.get('user'))
             update_model(user.profile, content.get('profile'))
 
@@ -667,8 +706,6 @@ class CourseEnrollmentStartedWebFilter(PipelineStep):
 
             if 'mode' in content:
                 mode = content.get('mode')
-
-            _check_for_exception(exceptions, CourseEnrollmentStarted.PreventEnrollment)
 
             return {
                 "user": user,
@@ -694,7 +731,6 @@ class CourseUnenrollmentStartedWebFilter(PipelineStep):
         {
             "user": {
                 "id": 4,
-                "password": "pbkdf2_sha256$260000$...=",
                 "last_login": "2023-06-13 15:04:10.629206+00:00",
                 "is_superuser": true,
                 "username": "andres",
@@ -781,10 +817,9 @@ class CourseUnenrollmentStartedWebFilter(PipelineStep):
                                                   data=data,
                                                   exception=CourseUnenrollmentStarted.PreventUnenrollment)
 
+            _check_for_exception(exceptions, CourseUnenrollmentStarted.PreventUnenrollment)
             update_model(user, content.get('user'))
             update_model(user.profile, content.get('profile'))
-
-            _check_for_exception(exceptions, CourseUnenrollmentStarted.PreventUnenrollment)
 
             return {
                 "enrollment": enrollment,
@@ -808,7 +843,6 @@ class CertificateCreationRequestedWebFilter(PipelineStep):
         {
             "user": {
                 "id": 17,
-                "password": "pbkdf2_sha256***=",
                 "last_login": "2023-06-14 16:11:08.341205+00:00",
                 "is_superuser": false,
                 "username": "test1",
@@ -930,6 +964,7 @@ class CertificateCreationRequestedWebFilter(PipelineStep):
                                                   data=object_serializer(data),
                                                   exception=CertificateCreationRequested.PreventCertificateCreation)
 
+            _check_for_exception(exceptions, CertificateCreationRequested.PreventCertificateCreation)
             update_model(user, content.get('user'))
             update_model(user.profile, content.get('profile'))
 
@@ -937,8 +972,6 @@ class CertificateCreationRequestedWebFilter(PipelineStep):
                 course_key = CourseKey.from_string(content.get('course_key'))
 
             update_object(grade, content.get('grade'))
-
-            _check_for_exception(exceptions, CertificateCreationRequested.PreventCertificateCreation)
 
             return {
                 "user": user,
@@ -1122,7 +1155,6 @@ class CohortChangeRequestedWebFilter(PipelineStep):
             },
             "user": {
                 "id": 4,
-                "password": "pbkdf2_sha256$****=",
                 "last_login": "2023-06-21 16:43:46.264292+00:00",
                 "is_superuser": true,
                 "username": "andres",
@@ -1218,10 +1250,9 @@ class CohortChangeRequestedWebFilter(PipelineStep):
                                                   data=data,
                                                   exception=CohortChangeRequested.PreventCohortChange)
 
+            _check_for_exception(exceptions, CohortChangeRequested.PreventCohortChange)
             update_object(current_membership, content.get('current_membership'))
             update_object(target_cohort, content.get('target_cohort'))
-
-            _check_for_exception(exceptions, CohortChangeRequested.PreventCohortChange)
 
             return {
                 "current_membership": current_membership,
@@ -1252,7 +1283,6 @@ class CohortAssignmentRequestedWebFilter(PipelineStep):
             },
             "user": {
                 "id": 4,
-                "password": "pbkdf2_sha256$****=",
                 "last_login": "2023-06-21 16:43:46.264292+00:00",
                 "is_superuser": true,
                 "username": "andres",
@@ -1348,11 +1378,10 @@ class CohortAssignmentRequestedWebFilter(PipelineStep):
                                                   data=data,
                                                   exception=CohortAssignmentRequested.PreventCohortAssignment)
 
+            _check_for_exception(exceptions, CohortAssignmentRequested.PreventCohortAssignment)
             update_object(user, content.get('user'))
             update_object(user.profile, content.get('user_profile'))
             update_object(target_cohort, content.get('target_cohort'))
-
-            _check_for_exception(exceptions, CohortAssignmentRequested.PreventCohortAssignment)
 
             return {
                 "user": user,
@@ -1467,8 +1496,8 @@ class CourseAboutRenderStartedWebFilter(PipelineStep):
 
             # Convert the course and course_details objects to dicts
             context_to_send = context.copy()
-            context_to_send['course'] = vars(course)
-            context_to_send['course_details'] = vars(course_details)
+            context_to_send['course'] = object_serializer(course)
+            context_to_send['course_details'] = object_serializer(course_details)
 
             data = {
                 "context": context_to_send,
@@ -1480,16 +1509,15 @@ class CourseAboutRenderStartedWebFilter(PipelineStep):
                                                   exception=CourseAboutRenderStarted.RedirectToPage)
 
             # The response data will have a course and a course_details objects that are immutable
-            if 'context' in content:
-                content['context'].update({'course': course})
-                content['context'].update({'course_details': course_details})
+            updated_context = {**context, **content.get('context', {})}
+            updated_context.update({'course': course, 'course_details': course_details})
 
             _check_for_exception(exceptions, CourseAboutRenderStarted.RedirectToPage)
             _check_for_exception(exceptions, CourseAboutRenderStarted.RenderCustomResponse)
             _check_for_exception(exceptions, CourseAboutRenderStarted.RenderInvalidCourseAbout)
 
             return {
-                "context": content.get('context') or context,
+                "context": updated_context,
                 "template_name": content.get('template_name') or template_name,
             }
 
@@ -1699,12 +1727,14 @@ class CourseEnrollmentQuerysetRequestedWebFilter(PipelineStep):
 
             content, exceptions = _process_filter(
                 webfilters=webfilters,
-                data=data,
+                data=return_data,
                 exception=CourseEnrollmentQuerysetRequested.PreventEnrollmentQuerysetRequest)
 
-            return_data['enrollments'] = data['enrollments'].filter(content.get('filter', {}))
+            return_data['enrollments'] = data['enrollments'].filter(**content.get('filter', {}))
 
             _check_for_exception(exceptions, CourseEnrollmentQuerysetRequested.PreventEnrollmentQuerysetRequest)
+
+            return return_data
 
         return {}
 
@@ -1844,7 +1874,7 @@ class CourseHomeUrlCreationStartedWebFilter(PipelineStep):
             logger.info(f"Webfilter for {event} event.")
 
             course_key = data.get('course_key')
-            course_id = f"course-v1:{course_key.org}+{course_key.course}+{course_key.run}"
+            course_id = str(course_key)
 
             content, _ = _process_filter(
                 webfilters=webfilters,
@@ -1889,7 +1919,7 @@ class CourseEnrollmentAPIRenderStartedWebFilter(PipelineStep):
             logger.info(f"Webfilter for {event} event.")
 
             course_key = data.get('course_key')
-            course_id = f"course-v1:{course_key.org}+{course_key.course}+{course_key.run}"
+            course_id = str(course_key)
 
             content, _ = _process_filter(
                 webfilters=webfilters,
@@ -2139,16 +2169,16 @@ class ScheduleQuerySetRequestedWebFilter(PipelineStep):
         event = type(self).__name__[:-9]
 
         return_data = data.copy()
-        return_data['schedules'] = list(data['schedules'].values())
 
         webfilters = Webfilter.objects.filter(enabled=True, event=event)
 
         if webfilters:
             logger.info(f"Webfilter for {event} event.")
 
-            content, _ = _process_filter(webfilters=webfilters, data=data)
+            payload = {'schedules': list(data['schedules'].values())}
+            content, _ = _process_filter(webfilters=webfilters, data=payload)
 
-            return_data['schedules'] = data['schedules'].filter(content.get('filter', {}))
+            return_data['schedules'] = data['schedules'].filter(**content.get('filter', {}))
 
             return return_data
 
@@ -2194,3 +2224,52 @@ class LMSPageURLRequestedWebFilter(PipelineStep):
             return return_data
 
         return {}
+
+
+class InstructorDashboardTabsRequestedWebFilter(PipelineStep):
+    """Customize Verawood instructor dashboard tabs, preserving user and course objects."""
+
+    def run_filter(self, tabs, user, course_key):  # pylint: disable=arguments-differ
+        """Accept a replacement tabs list or PreventTabsGeneration exception."""
+        webfilters = Webfilter.objects.filter(enabled=True, event='InstructorDashboardTabsRequested')
+        if not webfilters:
+            return {}
+        content, exceptions = _process_filter(
+            webfilters, {'tabs': tabs, 'user': user, 'course_key': course_key},
+            exception=InstructorDashboardTabsRequested.PreventTabsGeneration,
+        )
+        _check_for_exception(exceptions, InstructorDashboardTabsRequested.PreventTabsGeneration)
+        updated_tabs = content.get('tabs', tabs)
+        if not isinstance(updated_tabs, list) or not all(isinstance(tab, dict) for tab in updated_tabs):
+            raise ValueError('tabs must be a list of objects')
+        return {'tabs': updated_tabs, 'user': user, 'course_key': course_key}
+
+
+class AccountSettingsReadOnlyFieldsRequestedWebFilter(PipelineStep):
+    """Add protected account fields without removing existing read-only restrictions."""
+
+    def run_filter(self, readonly_fields, user):  # pylint: disable=arguments-differ
+        """Convert returned JSON field names into the set required by the account API."""
+        webfilters = Webfilter.objects.filter(enabled=True, event='AccountSettingsReadOnlyFieldsRequested')
+        if not webfilters:
+            return {}
+        content, _ = _process_filter(webfilters, {'readonly_fields': sorted(readonly_fields), 'user': user})
+        additional_fields = content.get('readonly_fields', [])
+        if not isinstance(additional_fields, list) or not all(isinstance(field, str) for field in additional_fields):
+            raise ValueError('readonly_fields must be a list of strings')
+        return {'readonly_fields': readonly_fields | set(additional_fields), 'user': user}
+
+
+class GradeEventContextRequestedWebFilter(PipelineStep):
+    """Enrich grade event context while retaining the platform's user and course IDs."""
+
+    def run_filter(self, context, user_id, course_id):  # pylint: disable=arguments-differ
+        """Merge additional context from configured endpoints."""
+        webfilters = Webfilter.objects.filter(enabled=True, event='GradeEventContextRequested')
+        if not webfilters:
+            return {}
+        content, _ = _process_filter(webfilters, {'context': context, 'user_id': user_id, 'course_id': course_id})
+        extra_context = content.get('context', {})
+        if not isinstance(extra_context, dict):
+            raise ValueError('context must be an object')
+        return {'context': {**context, **extra_context}, 'user_id': user_id, 'course_id': course_id}
