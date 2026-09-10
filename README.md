@@ -12,7 +12,7 @@
 
 Webhooks for Open edX.
 
-Current compatibility target: Open edX Ulmo / Tutor 21.x.
+Current compatibility target: Open edX Verawood / Tutor 22.x.
 
 This plugin implements a generic case of event handling that triggers a request
 to a configurable URL when a signal is received.
@@ -40,10 +40,10 @@ OPENEDX_EXTRA_PIP_REQUIREMENTS:
   - openedx-webhooks
 ```
 
-This release targets Open edX Ulmo and Tutor 21.x, which use Python 3.11.
+This release targets Open edX Verawood and Tutor 22.x, which use Python 3.12.
 
-If it is an existing installation, you might need to run migrations to create
-the database table:
+After rebuilding the Open edX image with the updated package, run migrations
+before restarting LMS, Studio, and their workers:
 
 ```bash
 tutor {dev|local|k8s} exec lms ./manage.py lms migrate
@@ -52,6 +52,13 @@ tutor {dev|local|k8s} exec lms ./manage.py lms migrate
 This plugin now registers extension points in both LMS and CMS. Webhook and
 webfilter configuration is still managed through Django admin and the same
 database tables.
+
+Migration `0008_verawood` adds the current event choices and corrects ten old
+filter names that did not match their handlers. Existing URLs and controls are
+preserved. Corrected configurations that previously never fired will now become
+active; review enabled endpoints before upgrading. The migration does not convert
+legacy instructor dashboard customizations into MFE tabs. Keep package version 21
+for Ulmo deployments.
 
 ## Configuring
 
@@ -65,7 +72,6 @@ called.
 
 The `Webhooks` Django admin panel has the following settings:
 
-- Description: Add a description for this webhook for reference.
 - Event: Choose from the list the event that will trigger the webhook.
 - Webhook URL: URL to call. Get it from your webhook processor.
 - Enabled: Click to enable the webhook.
@@ -107,6 +113,16 @@ cases, the payload includes an `event_metadata` key with at least the event
 type and the date and time in UTC format. Other keys depend on the event. For
 example, login events usually include `user` and `profile` keys with details of
 the user logging in.
+
+Signal webhooks retain their existing envelope: the data key is the fully
+qualified upstream data class, such as
+`openedx_events.authz.data.RoleAssignmentData`, alongside `event_metadata`.
+Webfilters use argument-specific keys such as `user` and `profile`.
+
+Credential fields (including passwords and password hashes) are omitted from
+outgoing payloads. Remote model updates cannot change primary keys, relationships,
+passwords, or account privilege flags. Other personal data is intentionally sent
+to configured endpoints; restrict configuration access to trusted administrators.
 
 If the `Use WWW form encoding` option is enabled, the data is passed as plain
 key-value pairs in form encoding. The structure is flattened and the key names
@@ -173,6 +189,12 @@ are triggered. The responses of all webfilters are combined into one data
 structure and used to update the objects. If more than one webfilter processor
 includes data for the same key, the last one overrides the previous ones.
 
+Endpoints run in ascending configuration ID order. Signal delivery failures are
+logged and delivery continues to the other endpoints. Delivery is synchronous,
+with a ten-second timeout per request, and has no persistent retries. Webfilters
+retain their configured halting behavior; filters with no upstream exception
+cannot halt through the transport-error controls.
+
 ## Developing
 
 More information about available signals can be found in the [events
@@ -180,19 +202,42 @@ documentation](https://docs.openedx.org/projects/openedx-events/en/stable/refere
 and the [filters
 documentation](https://docs.openedx.org/projects/openedx-filters/en/stable/reference/filters.html).
 
-Ulmo compatibility in this package is aligned with:
+Verawood compatibility in this package is aligned with:
 
-- `openedx-filters==2.1.0`
-- `openedx-events==10.5.0`
+- `openedx-filters==3.4.1`
+- `openedx-events==11.2.0`
 
-Supported Ulmo-era additions in this release include:
+The runtime is Python 3.12 with Django 5.2; tests pin Django 5.2.13 from the
+Verawood platform requirements.
 
-- New webhook events:
-  - `LTI_PROVIDER_LAUNCH_SUCCESS`
-  - `COURSE_RERUN_COMPLETED`
-- Filter review against the current upstream reference found no new Ulmo filter
-  types, and no renames or deprecations affecting the filters already
-  registered by this plugin.
+New filters are `InstructorDashboardTabsRequested`,
+`AccountSettingsReadOnlyFieldsRequested`, and `GradeEventContextRequested`.
+New `ROLE_ASSIGNMENT_CREATED` and `ROLE_ASSIGNMENT_DELETED` webhook events are
+registered in both LMS and Studio. Existing learning and authoring signal names
+and receiver arguments are unchanged. Discussion payloads now include `enabled`;
+forum IDs are strings and several forum fields may be null.
+
+For the new instructor dashboard, configure `InstructorDashboardTabsRequested`
+and return `{"data": {"tabs": [{"tab_id": "reports", "title": "Reports", "url": "https://example.com/reports"}]}}`.
+This replaces the tabs list (including with an empty list); include any existing
+tabs you wish to keep. Its filter identifier is
+`org.openedx.learning.instructor.dashboard.tabs.requested.v1` in the pinned source,
+despite the `tabs.generated.v1` identifier mentioned in the release notes.
+Legacy `InstructorDashboardRenderStarted` remains available only when the legacy
+dashboard is enabled. Frontend plugin configuration is still needed to render
+custom content inside the MFE.
+
+For account restrictions, return `{"data": {"readonly_fields": ["name", "email"]}}`.
+These names are added to existing restrictions; the pipeline retains a Python set.
+For grade event enrichment, return `{"data": {"context": {"source": "crm"}}}`.
+The context is merged while retaining the original user and course identifiers.
+The pinned platform has no caller for `GradeEventContextRequested`, so it requires
+an upstream/custom integration to fire. `AccountSettingsRenderStarted` and
+`CourseEnrollmentQuerysetRequested` likewise have no callers in stock Verawood;
+they remain registered for compatibility with custom integrations.
+
+See the [Verawood compatibility and code review](docs/verawood-review.md) for
+the upstream comparison, fixed defects, and deployment validation limits.
 
 Existing recent coverage retained from prior releases includes:
 
@@ -210,7 +255,7 @@ Existing recent coverage retained from prior releases includes:
 
 From version to version, new filters are added to Open edX. The complete list
 of filters and their definitions can be found in `filters.py` in the
-[openedx-filters repository](https://github.com/openedx/openedx-filters/blob/v2.1.0/openedx_filters/learning/filters.py).
+[openedx-filters repository](https://github.com/openedx/openedx-filters/blob/v3.4.1/openedx_filters/learning/filters.py).
 
 To add a new filter, create the filter class handler in `filters.py`
 containing the `run_filter` function. Then add a block in `common.py` linking
@@ -222,7 +267,7 @@ dict, which can be empty.
 From version to version, new event producers are added to Open edX. The
 complete list of events and their definitions can be found in `signals.py` in
 different folders in the
-[openedx-events repository](https://github.com/openedx/openedx-events/tree/v10.5.0/openedx_events),
+[openedx-events repository](https://github.com/openedx/openedx-events/tree/v11.2.0/openedx_events),
 depending on their category.
 
 To add a new event hook, add the signal to the `signals` dict in `apps.py`.
@@ -237,7 +282,7 @@ cd openedx-webhooks
 
 # Set up a virtualenv with the same name as the repo and activate it
 # Here's how you might do that if you have virtualenvwrapper setup.
-mkvirtualenv -p python3.11 openedx-webhooks
+mkvirtualenv -p python3.12 openedx-webhooks
 ```
 
 ### Every Time You Develop Something In This Repo
@@ -283,7 +328,7 @@ workflow no longer uses a long-lived PyPI API token. Configure the project's
 trusted publisher in PyPI before cutting a GitHub release.
 
 Release automation expects tags in the format `release/v<version>`, for example
-`release/v21.0.0`. Pushing one of those tags from a commit contained in `main`
+`release/v22.0.0`. Pushing one of those tags from a commit contained in `main`
 creates a GitHub release, and the publish workflow can also be run manually
 from the Actions tab when needed.
 

@@ -117,12 +117,12 @@ setup(
     author_email='andres@aulasneo.com',
     url='https://github.com/aulasneo/openedx-webhooks',
     packages=find_packages(
-        exclude=["*tests"],
+        exclude=["tests", "tests.*", "test_utils", "test_utils.*"],
     ),
 
     include_package_data=True,
     install_requires=load_requirements('requirements/base.in'),
-    python_requires=">=3.11",
+    python_requires=">=3.12",
     license="AGPL 3.0",
     zip_safe=False,
     keywords='Openedx webhooks',
@@ -134,7 +134,7 @@ setup(
         'License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)',
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
     ],
     entry_points={
         "lms.djangoapp": [

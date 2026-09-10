@@ -7,16 +7,35 @@ from collections.abc import MutableMapping
 from typing import Any, Union
 
 import requests
+from attrs import fields, has
 from opaque_keys import OpaqueKey
 from xblock.fields import ScopeIds
 
 logger = logging.getLogger(__name__)
+
+SENSITIVE_FIELDS = frozenset({
+    'password', 'password1', 'password2', 'old_password', 'new_password',
+    'access_token', 'refresh_token', 'client_secret', 'authorization', 'cookie', 'csrfmiddlewaretoken',
+})
+
+
+def redact_sensitive_fields(value):
+    """Remove credentials recursively without changing the caller's objects."""
+    if isinstance(value, dict):
+        return {
+            key: redact_sensitive_fields(item) for key, item in value.items()
+            if not isinstance(key, str) or key.lower() not in SENSITIVE_FIELDS
+        }
+    if isinstance(value, (list, tuple)):
+        return [redact_sensitive_fields(item) for item in value]
+    return value
 
 
 def send(url, payload, www_form_urlencoded: bool = False):
     """
     Dispatch the payload to the webhook url, return the response and catch exceptions.
     """
+    payload = redact_sensitive_fields(payload)
     if www_form_urlencoded:
         headers = {'Content-type': 'application/x-www-form-urlencoded', 'Accept': 'text/plain'}
         payload = flatten_dict(payload)
@@ -39,6 +58,7 @@ def flatten_dict(dictionary, parent_key="", sep="_"):
     """
     items = []
     for key, value in dictionary.items():
+        key = str(key)
         new_key = parent_key + sep + key if parent_key else key
         if isinstance(value, MutableMapping):
             items.extend(flatten_dict(value, new_key, sep=sep).items())
@@ -86,6 +106,8 @@ def object_serializer(o, depth=0) -> Union[dict, Any]:
     return_value = {}
     if isinstance(o, dict):
         dict_values = o.copy()
+    elif has(type(o)):
+        dict_values = {field.name: getattr(o, field.name) for field in fields(type(o))}
     elif hasattr(o, "__dict__"):
         dict_values = o.__dict__.copy()
     # if it is not a dict and cannot be converted to a dict, try to stringify it.
@@ -94,8 +116,8 @@ def object_serializer(o, depth=0) -> Union[dict, Any]:
     else:
         return f"Unserializable {type(o)}"
     for key, value in dict_values.items():
-        if isinstance(key, str):
-            # Hide the private fields
-            if not key.startswith("_"):
-                return_value[key] = object_serializer(value, depth + 1)
+        key = str(key)
+        # Hide private fields and credentials, including on nested objects.
+        if not key.startswith("_") and key.lower() not in SENSITIVE_FIELDS:
+            return_value[key] = object_serializer(value, depth + 1)
     return return_value

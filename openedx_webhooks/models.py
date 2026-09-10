@@ -9,20 +9,18 @@ date:           May 2023
 usage:          Django models for Open edX signals webhooks
 """
 
+import re
+from types import SimpleNamespace
+
 from django.db import models
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _
 from model_utils.models import TimeStampedModel
 
 from .apps import signals
 from .settings.common import plugin_settings
 
-
 # From https://github.com/openedx/edx-platform/blob/master/docs/guides/hooks/filters.rst#index-of-filters
-class Fake_settings:
-    OPEN_EDX_FILTERS_CONFIG = {}
-
-
-fake_settings = Fake_settings()
+fake_settings = SimpleNamespace(OPEN_EDX_FILTERS_CONFIG={})
 
 plugin_settings(fake_settings)
 
@@ -41,10 +39,10 @@ class Webhook(TimeStampedModel):
         signal_list += signal_app_list
 
     # Create a set of pairs like ("COURSE_ENROLLMENT_CREATED", "Course enrollment created")...
-    event_list = (
+    event_list = [
         (signal,
          signal.capitalize().replace("_", " ")) for signal in signal_list
-    )
+    ]
 
     event = models.CharField(
         max_length=50,
@@ -87,10 +85,16 @@ class Webfilter(TimeStampedModel):
     .. no_pii:
     """
 
+    class Meta:
+        """Apply multiple configured filters in a deterministic order."""
+
+        ordering = ['pk']
+
+    # Persist the handler's exact event name, including acronyms and word order.
     filter_list = [
-        (''.join(list(map(str.capitalize, filter.replace('_', '.').split('.')[3:-1]))),
-         ' '.join(list(map(str.capitalize, filter.replace('_', '.').split('.')[3:-1]))),)
-        for filter in filters
+        (name, re.sub(r'(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])', ' ', name))
+        for config in filters.values()
+        for name in [config['pipeline'][0].rsplit('.', 1)[1].removesuffix('WebFilter')]
     ]
 
     description = models.TextField(

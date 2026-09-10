@@ -1,5 +1,26 @@
 # Change Log
 
+## Version 22.0.0 (2026-09-10)
+
+- Target Open edX Verawood: Python 3.12, Django 5.2, openedx-events 11.2.0,
+  and openedx-filters 3.4.1. Refresh dependency locks and CI/documentation runtimes.
+- Add `InstructorDashboardTabsRequested`, `AccountSettingsReadOnlyFieldsRequested`,
+  and `GradeEventContextRequested` webfilters. Retain the legacy dashboard filter.
+- Add `ROLE_ASSIGNMENT_CREATED` and `ROLE_ASSIGNMENT_DELETED` webhooks in LMS and Studio.
+- Validate all learning/authoring/authz signal receiver arguments and all public
+  learning/authoring filter registrations against the release-pinned libraries.
+- Correct admin filter choices and migrate ten previously mismatched event names
+  without changing endpoint configuration. Corrected enabled endpoints can now fire.
+- Make settings initialization idempotent and Studio imports independent of LMS code.
+- Fix queryset serialization, keyword lookups, and returned filtered querysets.
+- Fix transport halting for upstream exception signatures, non-object JSON responses,
+  custom HTTP responses, boolean updates, and partial course-about context updates.
+- Omit credentials from outgoing payloads and logs, and protect model identity,
+  relationships, credentials, and account privilege flags from remote updates.
+- Honor login/enrollment/certificate/cohort denial responses before applying updates.
+- Isolate failed signal deliveries, preserve later subscribers, and define endpoint
+  ordering by configuration ID. Add regression and data migration tests.
+
 ## Version 21.0.0 (2026-04-02)
 
 - Add Open edX Ulmo compatibility.

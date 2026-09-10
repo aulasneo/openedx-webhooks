@@ -7,6 +7,10 @@ from django.apps import AppConfig
 
 # Declare all signals
 signals = {
+    "authz": [
+        "ROLE_ASSIGNMENT_CREATED",
+        "ROLE_ASSIGNMENT_DELETED",
+    ],
     "content_authoring": [
         "COURSE_CATALOG_INFO_CHANGED",
         "XBLOCK_CREATED",
@@ -115,10 +119,12 @@ class WebhooksConfig(AppConfig):
                 "relative_path": "receivers",
                 "receivers": [
                     receiver for receiver in receivers
-                    if receiver["signal_path"].startswith("openedx_events.content_authoring.")
+                    if receiver["signal_path"].startswith((
+                        "openedx_events.content_authoring.", "openedx_events.authz.",
+                    ))
                 ],
             },
         },
     }
 
-    logger.info("Open edx Webhooks: signals registerd")
+    logger.info("Open edX Webhooks: signals registered")

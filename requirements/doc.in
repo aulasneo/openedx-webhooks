@@ -8,3 +8,4 @@ doc8                      # reStructuredText style checker
 twine                     # Validates README.md for usage on PyPI
 build                     # Needed to build the wheel for twine README check
 Sphinx                    # Documentation builder
+edx-sphinx-theme           # Documentation theme (not a runtime dependency)

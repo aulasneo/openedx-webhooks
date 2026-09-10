@@ -159,9 +159,27 @@ def plugin_settings(settings):
 
     }
 
+    for filter_type, handler in (
+        ("org.openedx.learning.instructor.dashboard.tabs.requested.v1", "InstructorDashboardTabsRequested"),
+        ("org.openedx.learning.account.settings.read_only_fields.requested.v1",
+         "AccountSettingsReadOnlyFieldsRequested"),
+        ("org.openedx.learning.grade.context.requested.v1", "GradeEventContextRequested"),
+    ):
+        filters_config[filter_type] = {
+            "fail_silently": False,
+            "pipeline": [f"openedx_webhooks.filters.{handler}WebFilter"],
+        }
+
+    merge_filters(settings, filters_config)
+
+
+def merge_filters(settings, filters_config):
+    """Register each step once while preserving other plugins' configuration."""
+    if not hasattr(settings, 'OPEN_EDX_FILTERS_CONFIG'):
+        settings.OPEN_EDX_FILTERS_CONFIG = {}
     for key, filter_config in filters_config.items():
-        if hasattr(settings, 'OPEN_EDX_FILTERS_CONFIG'):    # Avoid errors during build time
-            if key in settings.OPEN_EDX_FILTERS_CONFIG:     # Allow other modules in the pipeline
-                settings.OPEN_EDX_FILTERS_CONFIG[key]['pipeline'] += filter_config['pipeline']
-            else:
-                settings.OPEN_EDX_FILTERS_CONFIG[key] = filter_config
+        config = settings.OPEN_EDX_FILTERS_CONFIG.setdefault(key, {"fail_silently": False})
+        pipeline = config.setdefault('pipeline', [])
+        for step in filter_config['pipeline']:
+            if step not in pipeline:
+                pipeline.append(step)
