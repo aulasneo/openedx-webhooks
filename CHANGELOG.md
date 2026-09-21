@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## Version 21.0.1 (2026-09-21)
 - fix: Set OPEN_EDX_FILTERS_CONFIG if not set when the plugin is autodiscovered.
 
 ## Version 21.0.0 (2026-04-02)
