@@ -1,5 +1,8 @@
 # Change Log
 
+## Unreleased
+- fix: Set OPEN_EDX_FILTERS_CONFIG if not set when the plugin is autodiscovered.
+
 ## Version 21.0.0 (2026-04-02)
 
 - Add Open edX Ulmo compatibility.
