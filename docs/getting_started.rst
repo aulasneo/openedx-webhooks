@@ -11,7 +11,7 @@ Install dependencies
 ********************
 Dependencies can be installed via the command below.
 
-This project targets Open edX Ulmo / Tutor 21.x and expects Python 3.11.
+This project targets Open edX Verawood / Tutor 22.x and expects Python 3.12.
 
 .. code-block:: bash
 

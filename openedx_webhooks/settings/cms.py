@@ -2,6 +2,8 @@
 CMS Pluggable Django App settings.
 """
 
+from .common import merge_filters
+
 
 def plugin_settings(settings):
     """
@@ -16,11 +18,4 @@ def plugin_settings(settings):
         },
     }
 
-    if not hasattr(settings, 'OPEN_EDX_FILTERS_CONFIG'):
-        return
-
-    for key, filter_config in filters_config.items():
-        if key in settings.OPEN_EDX_FILTERS_CONFIG:
-            settings.OPEN_EDX_FILTERS_CONFIG[key]['pipeline'] += filter_config['pipeline']
-        else:
-            settings.OPEN_EDX_FILTERS_CONFIG[key] = filter_config
+    merge_filters(settings, filters_config)
