@@ -1,0 +1,35 @@
+tests/test_utils.py
+  s_7efb34064ba5b5::t_e637e7ee39f253 8,65-82
+openedx_webhooks/utils.py
+  s_7efb34064ba5b5::t_3f91cf6eae0aaa 18-19
+openedx_webhooks/receivers.py
+  s_7efb34064ba5b5::t_3f91cf6eae0aaa 42-46
+README.md
+  s_7efb34064ba5b5::t_3f91cf6eae0aaa 194-196
+docs/verawood-review.md
+  s_7efb34064ba5b5::t_3f91cf6eae0aaa 39
+tests/test_filters.py
+  s_7efb34064ba5b5::t_e637e7ee39f253 237-246
+openedx_webhooks/filters.py
+  s_7efb34064ba5b5::t_3f91cf6eae0aaa 261-262
+tests/test_receivers.py
+  s_7efb34064ba5b5::t_3f91cf6eae0aaa 34-35,47,52,58-63,65,67-72,77-80
+tests/test_contracts.py
+  s_7efb34064ba5b5::t_3f91cf6eae0aaa 5,83-113
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2b794ae5d56094ff26d9f40785568568cd382d30",
+  "prompts": {},
+  "sessions": {
+    "s_7efb34064ba5b5": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a08964-021f-7ef3-9f20-4238ae7ba898",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Andrés González <andres@aulasneo.com>"
+    }
+  }
+}
