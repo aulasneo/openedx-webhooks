@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## Version 22.0.0 (2026-10-02)
 
 - Target Open edX Verawood: Python 3.12, Django 5.2, openedx-events 11.2.0,
   and openedx-filters 3.4.1. Refresh dependency locks and CI/documentation runtimes.
