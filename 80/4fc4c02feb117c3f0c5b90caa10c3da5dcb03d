@@ -1,0 +1,19 @@
+openedx_webhooks/settings/common.py
+  s_7efb34064ba5b5::t_8e5e2ed642fcc5 159-176
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "804fc4c02feb117c3f0c5b90caa10c3da5dcb03d",
+  "prompts": {},
+  "sessions": {
+    "s_7efb34064ba5b5": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a08964-021f-7ef3-9f20-4238ae7ba898",
+        "model": "unknown"
+      },
+      "human_author": "Andrés González <andres@aulasneo.com>"
+    }
+  }
+}
