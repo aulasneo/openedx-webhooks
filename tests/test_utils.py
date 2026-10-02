@@ -5,6 +5,7 @@ Tests for the `openedx_webhooks.utils` module.
 import json
 from unittest.mock import Mock
 
+import pytest
 from opaque_keys.edx.keys import CourseKey
 
 from openedx_webhooks.utils import flatten_dict, object_serializer, send
@@ -61,3 +62,21 @@ def test_json_transport_redacts_nested_credentials(monkeypatch):
     send('https://example.com/hook', payload)
     assert json.loads(post.call_args.kwargs['data']) == {'user': {'username': 'learner'}, 'items': [{}]}
     assert payload['user']['password'] == 'hash'
+
+
+@pytest.mark.parametrize('key', ['token', 'id_token', 'Token', 'ID_TOKEN'])
+@pytest.mark.parametrize('form_encoded', [False, True])
+def test_transport_and_serializer_redact_common_tokens(monkeypatch, key, form_encoded):
+    """Token keys are removed at every nesting level in JSON and form payloads."""
+    post = Mock()
+    monkeypatch.setattr('openedx_webhooks.utils.requests.post', post)
+    payload = {key: 'root-secret', 'user': {key: 'nested-secret', 'name': 'learner'},
+               'items': [{key: 'list-secret'}]}
+    expected = {'user': {'name': 'learner'}, 'items': [{}]}
+    assert object_serializer(payload) == expected
+    send('https://example.com/hook', payload, www_form_urlencoded=form_encoded)
+    body = post.call_args.kwargs['data']
+    assert body == flatten_dict(expected) if form_encoded else json.loads(body) == expected
+    assert payload[key] == 'root-secret'
+    assert payload['user'][key] == 'nested-secret'
+    assert payload['items'][0][key] == 'list-secret'

@@ -2,6 +2,7 @@
 
 import importlib
 import inspect
+import subprocess
 import sys
 from types import SimpleNamespace
 from unittest.mock import Mock
@@ -18,7 +19,6 @@ from openedx_webhooks import filters as handlers
 from openedx_webhooks import receivers
 from openedx_webhooks.apps import WebhooksConfig, signals
 from openedx_webhooks.models import Webfilter
-from openedx_webhooks.settings.cms import plugin_settings as studio_settings
 from openedx_webhooks.settings.common import plugin_settings
 
 
@@ -80,11 +80,37 @@ def test_studio_includes_authoring_and_authz_receivers():
 
 
 def test_studio_filter_can_be_imported_without_platform_modules():
-    """The Studio entry point is usable with no LMS packages installed or mocked."""
-    settings = SimpleNamespace()
-    studio_settings(settings)
-    for config in settings.OPEN_EDX_FILTERS_CONFIG.values():
-        assert import_string(config['pipeline'][0])
+    """A fresh interpreter must import Studio filters with platform imports blocked."""
+    script = '''
+import importlib.abc
+import os
+import sys
+from types import SimpleNamespace
+
+class BlockPlatformImports(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname.split('.')[0] in {'lms', 'common'}:
+            raise ModuleNotFoundError(f'Platform import blocked: {fullname}')
+
+assert 'openedx_webhooks.filters' not in sys.modules
+assert not any(name.split('.')[0] in {'lms', 'common'} for name in sys.modules)
+sys.meta_path.insert(0, BlockPlatformImports())
+os.environ['DJANGO_SETTINGS_MODULE'] = 'test_settings'
+import django
+django.setup()
+from django.utils.module_loading import import_string
+from openedx_webhooks.settings.cms import plugin_settings
+
+settings = SimpleNamespace()
+plugin_settings(settings)
+assert settings.OPEN_EDX_FILTERS_CONFIG
+for config in settings.OPEN_EDX_FILTERS_CONFIG.values():
+    for step in config['pipeline']:
+        assert import_string(step)
+assert 'openedx_webhooks.filters' in sys.modules
+'''
+    result = subprocess.run([sys.executable, '-c', script], capture_output=True, text=True, timeout=30, check=False)
+    assert result.returncode == 0, result.stdout + result.stderr
 
 
 @pytest.mark.django_db

@@ -39,8 +39,11 @@ def _process_event(event_name, data, **kwargs):
                 www_form_urlencoded=webhook.use_www_form_encoding,
             )
             response.raise_for_status()
-        except requests.exceptions.RequestException:
-            logger.warning("Webhook delivery failed for %s (configuration %s)", event_name, webhook.pk)
+        except requests.exceptions.RequestException as exc:
+            logger.warning(
+                "Webhook delivery failed for %s (configuration %s): %s: %s",
+                event_name, webhook.pk, type(exc).__name__, exc,
+            )
 
 
 def role_assignment_created_receiver(role_assignment, **kwargs):

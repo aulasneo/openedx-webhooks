@@ -191,7 +191,9 @@ includes data for the same key, the last one overrides the previous ones.
 
 Endpoints run in ascending configuration ID order. Signal delivery failures are
 logged and delivery continues to the other endpoints. Delivery is synchronous,
-with a ten-second timeout per request, and has no persistent retries. Webfilters
+with ten-second connection and response-read timeouts, and has no persistent
+retries. These timeouts are not a total request deadline; an endpoint that keeps
+sending data can block delivery for longer than ten seconds. Webfilters
 retain their configured halting behavior; filters with no upstream exception
 cannot halt through the transport-error controls.
 

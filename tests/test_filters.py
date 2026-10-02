@@ -234,6 +234,16 @@ def test_object_updates_accept_json_booleans(value):
     assert instance.active is (str(value).lower() == 'true')
 
 
+@pytest.mark.parametrize('value', [1, 0, 'yes', None, [], {}])
+def test_object_updates_skip_malformed_booleans_and_continue(value, caplog):
+    """An invalid boolean leaves that field unchanged without preventing other edits."""
+    instance = SimpleNamespace(auto_cohort=False, name='original')
+    filters.update_object(instance, {'auto_cohort': value, 'name': 'updated'})
+    assert instance.auto_cohort is False
+    assert instance.name == 'updated'
+    assert 'Cannot update boolean field auto_cohort' in caplog.text
+
+
 def test_nested_serialization_redacts_credentials(endpoint, response):
     """Nested models serialize structurally without leaking password hashes."""
     user = get_user_model()(username='learner', password='sensitive')

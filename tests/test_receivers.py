@@ -31,7 +31,8 @@ def test_authz_signal_dispatch(name, form_encoded, monkeypatch, caplog):
     monkeypatch.setattr('openedx_webhooks.utils.requests.post', post)
     signal = getattr(signals, name)
     receiver = getattr(receivers, f'{name.lower()}_receiver')
-    assignment = RoleAssignmentData(operation='created', subject='user^learner', role='course_admin',
+    operation = name.rsplit('_', 1)[1].lower()
+    assignment = RoleAssignmentData(operation=operation, subject='user^learner', role='course_admin',
                                     scope='course-v1:edX+DemoX+Demo', actor_id=4)
     signal.connect(receiver)
     try:
@@ -43,25 +44,40 @@ def test_authz_signal_dispatch(name, form_encoded, monkeypatch, caplog):
     body = post.call_args.kwargs['data']
     if form_encoded:
         assert body['openedx_events.authz.data.RoleAssignmentData_subject'] == 'user^learner'
+        assert body['openedx_events.authz.data.RoleAssignmentData_operation'] == operation
         assert body['event_metadata_event_type'] == signal.event_type
     else:
         payload = json.loads(body)
         assert payload['openedx_events.authz.data.RoleAssignmentData']['actor_id'] == 4
+        assert payload['openedx_events.authz.data.RoleAssignmentData']['operation'] == operation
         assert payload['event_metadata']['event_type'] == signal.event_type
         assert isinstance(payload['event_metadata']['id'], str)
     assert 'user^learner' not in caplog.text
 
 
-@pytest.mark.parametrize('failure', [requests.Timeout('down'), requests.HTTPError('503')])
-def test_delivery_failure_does_not_skip_other_subscribers(monkeypatch, failure):
+@pytest.mark.parametrize('failure', [
+    requests.Timeout('read timed out'),
+    requests.ConnectionError('connection refused'),
+    requests.HTTPError('503 Service Unavailable'),
+])
+def test_delivery_failure_does_not_skip_other_subscribers(monkeypatch, failure, caplog):
     """A failed delivery neither raises into the caller nor skips later configured URLs."""
-    for suffix in ('first', 'second'):
+    webhooks = [
         Webhook.objects.create(event='ROLE_ASSIGNMENT_CREATED', webhook_url=f'https://example.com/{suffix}')
-    send = Mock(side_effect=[failure, Mock()])
+        for suffix in ('first', 'second')
+    ]
+    if isinstance(failure, requests.HTTPError):
+        send = Mock(side_effect=[Mock(raise_for_status=Mock(side_effect=failure)), Mock()])
+    else:
+        send = Mock(side_effect=[failure, Mock()])
     monkeypatch.setattr(receivers, 'send', send)
     receivers.role_assignment_created_receiver(RoleAssignmentData('created', 'user^1', 'admin', 'course'))
     assert send.call_count == 2
     assert send.call_args.args[0] == 'https://example.com/second'
+    assert f'configuration {webhooks[0].pk}' in caplog.text
+    assert type(failure).__name__ in caplog.text
+    assert str(failure) in caplog.text
+    assert 'user^1' not in caplog.text
 
 
 def test_disabled_webhooks_do_not_send(monkeypatch):

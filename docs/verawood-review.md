@@ -36,7 +36,7 @@ added; the extension now registers all 27 public filters in these two domains.
 
 | New handler | Exact upstream filter type | Supported response behavior |
 | --- | --- | --- |
-| `InstructorDashboardTabsRequested` | `org.openedx.learning.instructor.dashboard.tabs.requested.v1` | Replace `tabs`, including with an empty list; support `PreventTabsGeneration` with optional custom tabs. Preserve user and course objects. |
+| `InstructorDashboardTabsRequested` | `org.openedx.learning.instructor.dashboard.tabs.requested.v1` | Replace `tabs`, including with an empty list; support `PreventTabsGeneration` with optional custom tabs. Preserve the user and `course_key` objects in the pipeline; the outgoing payload contains `course_key` as a string, not a serialized course object. |
 | `AccountSettingsReadOnlyFieldsRequested` | `org.openedx.learning.account.settings.read_only_fields.requested.v1` | Add JSON field names to the existing Python set; preserve the user object. |
 | `GradeEventContextRequested` | `org.openedx.learning.grade.context.requested.v1` | Merge `context`; preserve `user_id` and `course_id`. |
 

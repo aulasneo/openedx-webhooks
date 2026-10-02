@@ -258,7 +258,8 @@ def update_object(o, data):
                     elif isinstance(value, str) and value.lower() in {'true', 'false'}:
                         setattr(o, key, value.lower() == 'true')
                     else:
-                        raise ValueError(f"Expected a boolean for {key}")
+                        logger.error("Cannot update boolean field %s on %s: expected a boolean", key, type(o).__name__)
+                        continue
                 else:
                     setattr(o, key, value)
     except AttributeError as e:

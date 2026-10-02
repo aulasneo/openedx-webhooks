@@ -15,7 +15,8 @@ logger = logging.getLogger(__name__)
 
 SENSITIVE_FIELDS = frozenset({
     'password', 'password1', 'password2', 'old_password', 'new_password',
-    'access_token', 'refresh_token', 'client_secret', 'authorization', 'cookie', 'csrfmiddlewaretoken',
+    'token', 'id_token', 'access_token', 'refresh_token',
+    'client_secret', 'authorization', 'cookie', 'csrfmiddlewaretoken',
 })
 
 
