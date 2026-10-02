@@ -156,19 +156,25 @@ def plugin_settings(settings):
                 "openedx_webhooks.filters.LMSPageURLRequestedWebFilter"
             ]
         },
-
-    }
-
-    for filter_type, handler in (
-        ("org.openedx.learning.instructor.dashboard.tabs.requested.v1", "InstructorDashboardTabsRequested"),
-        ("org.openedx.learning.account.settings.read_only_fields.requested.v1",
-         "AccountSettingsReadOnlyFieldsRequested"),
-        ("org.openedx.learning.grade.context.requested.v1", "GradeEventContextRequested"),
-    ):
-        filters_config[filter_type] = {
+        "org.openedx.learning.instructor.dashboard.tabs.requested.v1": {
             "fail_silently": False,
-            "pipeline": [f"openedx_webhooks.filters.{handler}WebFilter"],
-        }
+            "pipeline": [
+                "openedx_webhooks.filters.InstructorDashboardTabsRequestedWebFilter"
+            ]
+        },
+        "org.openedx.learning.account.settings.read_only_fields.requested.v1": {
+            "fail_silently": False,
+            "pipeline": [
+                "openedx_webhooks.filters.AccountSettingsReadOnlyFieldsRequestedWebFilter"
+            ]
+        },
+        "org.openedx.learning.grade.context.requested.v1": {
+            "fail_silently": False,
+            "pipeline": [
+                "openedx_webhooks.filters.GradeEventContextRequestedWebFilter"
+            ]
+        },
+    }
 
     merge_filters(settings, filters_config)
 
