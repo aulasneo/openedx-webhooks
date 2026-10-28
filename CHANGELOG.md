@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## Version 22.1.0 (2026-10-28)
 
 - Register LMS and Studio filter settings during production initialization.
 - Serialize mappings, sequences, Django models, attrs classes, and dataclasses
