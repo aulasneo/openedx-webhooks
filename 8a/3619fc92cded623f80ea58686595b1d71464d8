@@ -1,0 +1,23 @@
+.bumpversion.cfg
+  s_7efb34064ba5b5::t_e85317b2302c99 6
+CHANGELOG.md
+  s_7efb34064ba5b5::t_7e97f0d67682a3 3
+openedx_webhooks/__init__.py
+  s_7efb34064ba5b5::t_c335e32c6b1a37 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8a3619fc92cded623f80ea58686595b1d71464d8",
+  "prompts": {},
+  "sessions": {
+    "s_7efb34064ba5b5": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a08964-021f-7ef3-9f20-4238ae7ba898",
+        "model": "unknown"
+      },
+      "human_author": "Andrés González <andres@aulasneo.com>"
+    }
+  }
+}
