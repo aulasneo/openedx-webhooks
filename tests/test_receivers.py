@@ -5,6 +5,7 @@ from unittest.mock import Mock
 
 import pytest
 import requests
+from attrs import define
 from opaque_keys.edx.keys import CourseKey
 from openedx_events.authz import signals
 from openedx_events.authz.data import RoleAssignmentData
@@ -87,6 +88,34 @@ def test_disabled_webhooks_do_not_send(monkeypatch):
     monkeypatch.setattr(receivers, 'send', send)
     receivers.role_assignment_created_receiver(RoleAssignmentData('created', 'user^1', 'admin', 'course'))
     send.assert_not_called()
+
+
+def test_event_payload_uses_one_serialization_budget_across_attributes_and_endpoints(monkeypatch, caplog):
+    """Large attrs fields share one limit and only produce one warning per event."""
+    @define
+    class LargeEvent:
+        first: list
+        second: list
+
+    for suffix in ('first', 'second'):
+        Webhook.objects.create(event='LARGE_EVENT', webhook_url=f'https://example.com/{suffix}')
+    send = Mock(return_value=Mock())
+    monkeypatch.setattr(receivers, 'send', send)
+    monkeypatch.setattr('openedx_webhooks.utils._MAX_SERIALIZATION_NODES', 48)
+    event = LargeEvent(first=list(range(10)), second=list(range(30)))
+    metadata = EventsMetadata('large.event')
+
+    receivers._process_event('LARGE_EVENT', event, metadata=metadata)  # pylint: disable=protected-access
+
+    assert send.call_count == 2
+    payload = send.call_args_list[0].args[1]
+    assert send.call_args_list[1].args[1] == payload
+    assert payload['event_metadata']['event_type'] == 'large.event'
+    event_data = payload[f'{LargeEvent.__module__}.{LargeEvent.__qualname__}']
+    assert event_data['first'] == list(range(10))
+    assert '! Node limit reached !' in str(event_data['second'])
+    assert len(event_data['second']) < len(event.second)
+    assert sum('payload serialization stopped' in record.message for record in caplog.records) == 1
 
 
 def test_discussion_enabled_and_nested_context_are_preserved(monkeypatch):

@@ -4,10 +4,9 @@ Open edX signal events handler functions.
 import logging
 
 import requests
-from attrs import asdict
 
 from .models import Webhook
-from .utils import send, value_serializer
+from .utils import object_serializer, send
 
 logger = logging.getLogger(__name__)
 
@@ -22,16 +21,17 @@ def _process_event(event_name, data, **kwargs):
     # Get the name of the data type
     data_type = f"{type(data).__module__}.{type(data).__qualname__}"
 
+    payload = None
     for webhook in webhooks:
         logger.info(f"{event_name} webhook triggered to {webhook.webhook_url}")
 
-        payload = {
-            data_type: asdict(data, value_serializer=value_serializer),
-            'event_metadata': (
-                asdict(kwargs["metadata"])
-                if kwargs.get("metadata") is not None else {}
-            ),
-        }
+        if payload is None:
+            # Serialize the entire envelope with one budget. Metadata comes first
+            # so it remains available if the event data exceeds the limit.
+            payload = object_serializer({
+                'event_metadata': kwargs.get('metadata') or {},
+                data_type: data,
+            })
         try:
             response = send(
                 webhook.webhook_url,
