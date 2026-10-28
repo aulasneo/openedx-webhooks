@@ -3,11 +3,14 @@ Utilities used by Open edX Events Receivers.
 """
 import json
 import logging
-from collections.abc import MutableMapping
+from collections.abc import Mapping, MutableMapping
+from dataclasses import fields as dataclass_fields, is_dataclass
 from typing import Any, Union
 
 import requests
 from attrs import fields, has
+from django.db import models
+from django.db.models.fields.files import FieldFile
 from opaque_keys import OpaqueKey
 from xblock.fields import ScopeIds
 
@@ -18,6 +21,10 @@ SENSITIVE_FIELDS = frozenset({
     'token', 'id_token', 'access_token', 'refresh_token',
     'client_secret', 'authorization', 'cookie', 'csrfmiddlewaretoken',
 })
+_MAX_SERIALIZATION_DEPTH = 15
+_MAX_SERIALIZATION_NODES = 10000
+_DEPTH_LIMIT_MARKER = "! Depth limit reached !"
+_NODE_LIMIT_MARKER = "! Node limit reached !"
 
 
 def redact_sensitive_fields(value):
@@ -87,38 +94,101 @@ def scope_ids_serializer(o):
     }
 
 
-def object_serializer(o, depth=0) -> Union[dict, Any]:
+def _mark_serialization_limit(state):
+    """Mark one serialization as truncated and log the limit once."""
+    state["exhausted"] = True
+    if not state["warned"]:
+        logger.warning(
+            "Webhook payload serialization stopped at the %s-node limit",
+            _MAX_SERIALIZATION_NODES,
+        )
+        state["warned"] = True
+
+
+def object_serializer(o, depth=0, _state=None) -> Union[dict, Any]:
     """
-    Serialize an arbitrary object as a json-serializable dict.
+    Serialize supported values without walking arbitrary object attributes.
+
+    Supported structured values are mappings, sequences, Django models,
+    attrs classes, and dataclasses. Unknown objects are represented as strings.
+    A shared node budget bounds work across the complete value being serialized.
     """
-    if depth > 15:
-        return "! Depth limit reached !"
-    # First serialize scalar objects
+    if _state is None:
+        _state = {"nodes": 0, "active": set(), "exhausted": False, "warned": False}
+
+    if depth > _MAX_SERIALIZATION_DEPTH:
+        return _DEPTH_LIMIT_MARKER
+    if _state["exhausted"]:
+        return _NODE_LIMIT_MARKER
+    if _state["nodes"] >= _MAX_SERIALIZATION_NODES:
+        _mark_serialization_limit(_state)
+        return _NODE_LIMIT_MARKER
+    _state["nodes"] += 1
+
     if isinstance(o, (int, float,  str)) or o is None:
         return o
-    # ScopeIds is a class present in block structures
-    elif isinstance(o, ScopeIds):
+    if isinstance(o, ScopeIds):
         return scope_ids_serializer(o)
-    elif isinstance(o, OpaqueKey):
+    if isinstance(o, FieldFile):
+        return o.name or ""
+    if isinstance(o, OpaqueKey):
         return str(o)
-    if isinstance(o, (list, tuple, set)):
-        return [object_serializer(item, depth + 1) for item in o]
-    # Now serialize dict-like objects
-    return_value = {}
-    if isinstance(o, dict):
-        dict_values = o.copy()
-    elif has(type(o)):
-        dict_values = {field.name: getattr(o, field.name) for field in fields(type(o))}
-    elif hasattr(o, "__dict__"):
-        dict_values = o.__dict__.copy()
-    # if it is not a dict and cannot be converted to a dict, try to stringify it.
-    elif hasattr(o, "__str__"):
-        return str(o)
-    else:
-        return f"Unserializable {type(o)}"
-    for key, value in dict_values.items():
-        key = str(key)
-        # Hide private fields and credentials, including on nested objects.
-        if not key.startswith("_") and key.lower() not in SENSITIVE_FIELDS:
-            return_value[key] = object_serializer(value, depth + 1)
-    return return_value
+
+    is_sequence = isinstance(o, (list, tuple, set))
+    is_mapping = isinstance(o, Mapping)
+    is_model = isinstance(o, models.Model)
+    is_attrs = has(type(o))
+    is_dataclass_instance = is_dataclass(o) and not isinstance(o, type)
+
+    if not (is_sequence or is_mapping or is_model or is_attrs or is_dataclass_instance):
+        try:
+            return str(o)
+        except Exception:  # pylint: disable=broad-except
+            return f"Unserializable {type(o).__module__}.{type(o).__qualname__}"
+
+    object_id = id(o)
+    if object_id in _state["active"]:
+        return _DEPTH_LIMIT_MARKER
+
+    _state["active"].add(object_id)
+    try:
+        if is_sequence:
+            serialized = []
+            for item in o:
+                serialized.append(object_serializer(item, depth + 1, _state))
+                if _state["exhausted"]:
+                    break
+            return serialized
+
+        if is_mapping:
+            entries = o.items()
+        elif is_model:
+            # Use loaded concrete values only: avoid related-object traversal
+            # and database queries for deferred fields.
+            entries = (
+                (field.name, o.__dict__[field.attname])
+                for field in o._meta.concrete_fields
+                if field.attname in o.__dict__
+            )
+        elif is_attrs:
+            entries = ((field.name, getattr(o, field.name)) for field in fields(type(o)))
+        else:
+            entries = ((field.name, getattr(o, field.name)) for field in dataclass_fields(o))
+
+        serialized = {}
+        for key, value in entries:
+            key = str(key)
+            if _state["nodes"] >= _MAX_SERIALIZATION_NODES:
+                _mark_serialization_limit(_state)
+                if not key.startswith("_") and key.lower() not in SENSITIVE_FIELDS:
+                    serialized[key] = _NODE_LIMIT_MARKER
+                break
+            _state["nodes"] += 1
+            # Hide private fields and credentials, including on nested objects.
+            if not key.startswith("_") and key.lower() not in SENSITIVE_FIELDS:
+                serialized[key] = object_serializer(value, depth + 1, _state)
+            if _state["exhausted"]:
+                break
+        return serialized
+    finally:
+        _state["active"].remove(object_id)
