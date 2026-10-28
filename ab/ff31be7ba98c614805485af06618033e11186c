@@ -1,0 +1,23 @@
+openedx_webhooks/receivers.py
+  s_7efb34064ba5b5::t_8996ec24dc8b79 9,24,28-34
+tests/test_receivers.py
+  s_7efb34064ba5b5::t_8996ec24dc8b79 8,93-103,105-118
+  s_7efb34064ba5b5::t_845555ea38492e 104
+  s_7efb34064ba5b5::t_29877bf2db2070 119-120
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "abff31be7ba98c614805485af06618033e11186c",
+  "prompts": {},
+  "sessions": {
+    "s_7efb34064ba5b5": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a08964-021f-7ef3-9f20-4238ae7ba898",
+        "model": "gpt-6.1-terra"
+      },
+      "human_author": "Andrés González <andres@aulasneo.com>"
+    }
+  }
+}
