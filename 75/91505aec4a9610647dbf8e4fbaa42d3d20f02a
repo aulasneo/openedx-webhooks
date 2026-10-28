@@ -1,0 +1,23 @@
+openedx_webhooks/utils.py
+  s_05902a14d25e40::t_c376be7df42ba9 6-7,12,24-27,108,110-114,116-123,125-127,130,132,134,136-180,187-194
+  s_05902a14d25e40::t_7654c80da49d3a 13,133
+  s_05902a14d25e40::t_e0d7dea8b448af 97-107,124,181-186
+openedx_webhooks/apps.py
+  s_05902a14d25e40::t_d1296b4452f73b 106,111
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7591505aec4a9610647dbf8e4fbaa42d3d20f02a",
+  "prompts": {},
+  "sessions": {
+    "s_05902a14d25e40": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a182a1-5ac6-7902-a33f-9d404aced0d1",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "Andrés González <andres@aulasneo.com>"
+    }
+  }
+}
