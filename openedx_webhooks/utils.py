@@ -4,7 +4,8 @@ Utilities used by Open edX Events Receivers.
 import json
 import logging
 from collections.abc import Mapping, MutableMapping
-from dataclasses import fields as dataclass_fields, is_dataclass
+from dataclasses import fields as dataclass_fields
+from dataclasses import is_dataclass
 from typing import Any, Union
 
 import requests
