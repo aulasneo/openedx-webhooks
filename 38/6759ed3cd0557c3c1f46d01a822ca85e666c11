@@ -1,0 +1,19 @@
+CHANGELOG.md
+  s_7efb34064ba5b5::t_be73c0df6d803a 3-13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "386759ed3cd0557c3c1f46d01a822ca85e666c11",
+  "prompts": {},
+  "sessions": {
+    "s_7efb34064ba5b5": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a08964-021f-7ef3-9f20-4238ae7ba898",
+        "model": "gpt-6.1-terra"
+      },
+      "human_author": "Andrés González <andres@aulasneo.com>"
+    }
+  }
+}
