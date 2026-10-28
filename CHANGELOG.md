@@ -1,5 +1,16 @@
 # Change Log
 
+## Unreleased
+
+- Register LMS and Studio filter settings during production initialization.
+- Serialize mappings, sequences, Django models, attrs classes, and dataclasses
+  without traversing arbitrary object attributes or loading deferred model fields.
+  Represent unsupported objects as strings and protect against cycles and deeply
+  nested structures.
+- Apply a shared 10,000-node serialization budget to each signal payload,
+  preserve event metadata when data is truncated, and reuse the serialized
+  payload across configured endpoints.
+
 ## Version 22.0.0 (2026-10-02)
 
 - Target Open edX Verawood: Python 3.12, Django 5.2, openedx-events 11.2.0,
