@@ -5,6 +5,7 @@ import logging
 
 import requests
 
+from .lookups import get_active_endpoints
 from .models import Webhook
 from .utils import object_serializer, send
 
@@ -16,7 +17,7 @@ def _process_event(event_name, data, **kwargs):
     Process all events with user data.
     """
     logger.debug(f"Processing event: {event_name}")
-    webhooks = Webhook.objects.filter(enabled=True, event=event_name).order_by('pk')
+    webhooks = get_active_endpoints(Webhook, event_name)
 
     # Get the name of the data type
     data_type = f"{type(data).__module__}.{type(data).__qualname__}"
