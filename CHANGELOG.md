@@ -1,5 +1,12 @@
 # Change Log
 
+## Unreleased
+
+- Cache enabled webhook and webfilter configuration lookups per event, including
+  empty results, to reduce repeated database queries. Reuse lookups within HTTP
+  requests and invalidate the shared cache after configuration saves or deletes.
+  Shared entries expire after 24 hours as a fallback.
+
 ## Version 22.1.0 (2026-10-28)
 
 - Register LMS and Studio filter settings during production initialization.

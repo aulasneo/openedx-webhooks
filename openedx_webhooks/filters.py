@@ -46,6 +46,7 @@ from openedx_filters.learning.filters import (
     VerticalBlockRenderCompleted,
 )
 
+from .lookups import get_active_endpoints
 from .models import Webfilter
 from .utils import SENSITIVE_FIELDS, object_serializer, redact_sensitive_fields, send
 
@@ -387,7 +388,7 @@ class StudentLoginRequestedWebFilter(PipelineStep):
         """Execute the filter."""
         event = "StudentLoginRequested"
 
-        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+        webfilters = get_active_endpoints(Webfilter, event)
 
         if webfilters:
             logger.info(f"Webfilter for {event} event for user {user}")
@@ -499,7 +500,7 @@ class StudentRegistrationRequestedWebFilter(PipelineStep):
     def run_filter(self, form_data):  # pylint: disable=arguments-differ
         """Execute the filter."""
         event = "StudentRegistrationRequested"
-        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+        webfilters = get_active_endpoints(Webfilter, event)
 
         if webfilters:
             from common.djangoapps.student.models import (  # pylint: disable=import-error,import-outside-toplevel
@@ -561,7 +562,7 @@ class AccountSettingsRenderStartedWebFilter(PipelineStep):
         """
         event = "AccountSettingsRenderStarted"
 
-        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+        webfilters = get_active_endpoints(Webfilter, event)
 
         if webfilters:
             logger.info(f"Webfilter for {event} event.")
@@ -683,7 +684,7 @@ class CourseEnrollmentStartedWebFilter(PipelineStep):
         """
         event = "CourseEnrollmentStarted"
 
-        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+        webfilters = get_active_endpoints(Webfilter, event)
 
         if webfilters:
             logger.info(f"Webfilter for {event} event. User: {user}, course: {course_key}, mode: {mode}.")
@@ -802,7 +803,7 @@ class CourseUnenrollmentStartedWebFilter(PipelineStep):
         """
         event = "CourseUnenrollmentStarted"
 
-        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+        webfilters = get_active_endpoints(Webfilter, event)
 
         if webfilters:
             logger.info(f"Webfilter for {event} event. Enrollment: {enrollment}")
@@ -948,7 +949,7 @@ class CertificateCreationRequestedWebFilter(PipelineStep):
         """
         event = "CertificateCreationRequested"
 
-        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+        webfilters = get_active_endpoints(Webfilter, event)
 
         if webfilters:
             user = data.get('user')
@@ -1094,7 +1095,7 @@ class CertificateRenderStartedWebFilter(PipelineStep):
         """
         event = "CertificateRenderStarted"
 
-        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+        webfilters = get_active_endpoints(Webfilter, event)
 
         if webfilters:
             logger.info(f"Webfilter for {event} event.")
@@ -1230,7 +1231,7 @@ class CohortChangeRequestedWebFilter(PipelineStep):
         """
         event = "CohortChangeRequested"
 
-        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+        webfilters = get_active_endpoints(Webfilter, event)
 
         if webfilters:
             logger.info(f"Webfilter for {event} event.")
@@ -1360,7 +1361,7 @@ class CohortAssignmentRequestedWebFilter(PipelineStep):
         """
         event = "CohortAssignmentRequested"
 
-        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+        webfilters = get_active_endpoints(Webfilter, event)
 
         if webfilters:
             logger.info(f"Webfilter for {event} event.")
@@ -1487,7 +1488,7 @@ class CourseAboutRenderStartedWebFilter(PipelineStep):
         """
         event = "CourseAboutRenderStarted"
 
-        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+        webfilters = get_active_endpoints(Webfilter, event)
 
         if webfilters:
             logger.info(f"Webfilter for {event} event.")
@@ -1621,7 +1622,7 @@ class DashboardRenderStartedWebFilter(PipelineStep):
         """
         event = "DashboardRenderStarted"
 
-        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+        webfilters = get_active_endpoints(Webfilter, event)
 
         if webfilters:
             logger.info(f"Webfilter for {event} event.")
@@ -1675,7 +1676,7 @@ class VerticalBlockChildRenderStartedWebFilter(PipelineStep):
         event = type(self).__name__[:-9]
 
         return_data = data.copy()
-        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+        webfilters = get_active_endpoints(Webfilter, event)
 
         if webfilters:
             logger.info(f"Webfilter for {event} event.")
@@ -1719,7 +1720,7 @@ class CourseEnrollmentQuerysetRequestedWebFilter(PipelineStep):
         event = type(self).__name__[:-9]
 
         return_data = data.copy()
-        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+        webfilters = get_active_endpoints(Webfilter, event)
 
         if webfilters:
             logger.info(f"Webfilter for {event} event.")
@@ -1766,7 +1767,7 @@ class RenderXBlockStartedWebFilter(PipelineStep):
         event = type(self).__name__[:-9]
 
         return_data = data.copy()
-        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+        webfilters = get_active_endpoints(Webfilter, event)
 
         if webfilters:
             logger.info(f"Webfilter for {event} event.")
@@ -1825,7 +1826,7 @@ class VerticalBlockRenderCompletedWebFilter(PipelineStep):
         event = type(self).__name__[:-9]
 
         return_data = data.copy()
-        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+        webfilters = get_active_endpoints(Webfilter, event)
 
         if webfilters:
             logger.info(f"Webfilter for {event} event.")
@@ -1869,7 +1870,7 @@ class CourseHomeUrlCreationStartedWebFilter(PipelineStep):
         event = type(self).__name__[:-9]
 
         return_data = data.copy()
-        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+        webfilters = get_active_endpoints(Webfilter, event)
 
         if webfilters:
             logger.info(f"Webfilter for {event} event.")
@@ -1914,7 +1915,7 @@ class CourseEnrollmentAPIRenderStartedWebFilter(PipelineStep):
         event = type(self).__name__[:-9]
 
         return_data = data.copy()
-        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+        webfilters = get_active_endpoints(Webfilter, event)
 
         if webfilters:
             logger.info(f"Webfilter for {event} event.")
@@ -1960,7 +1961,7 @@ class CourseRunAPIRenderStartedWebFilter(PipelineStep):
         event = type(self).__name__[:-9]
 
         return_data = data.copy()
-        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+        webfilters = get_active_endpoints(Webfilter, event)
 
         if webfilters:
             logger.info(f"Webfilter for {event} event.")
@@ -1999,7 +2000,7 @@ class InstructorDashboardRenderStartedWebFilter(PipelineStep):
         event = type(self).__name__[:-9]
 
         return_data = data.copy()
-        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+        webfilters = get_active_endpoints(Webfilter, event)
 
         if webfilters:
             logger.info(f"Webfilter for {event} event.")
@@ -2045,7 +2046,7 @@ class ORASubmissionViewRenderStartedWebFilter(PipelineStep):
         event = type(self).__name__[:-9]
 
         return_data = data.copy()
-        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+        webfilters = get_active_endpoints(Webfilter, event)
 
         if webfilters:
             logger.info(f"Webfilter for {event} event.")
@@ -2089,7 +2090,7 @@ class IDVPageURLRequestedWebFilter(PipelineStep):
         event = type(self).__name__[:-9]
 
         return_data = data.copy()
-        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+        webfilters = get_active_endpoints(Webfilter, event)
 
         if webfilters:
             logger.info(f"Webfilter for {event} event.")
@@ -2128,7 +2129,7 @@ class CourseAboutPageURLRequestedWebFilter(PipelineStep):
         event = type(self).__name__[:-9]
 
         return_data = data.copy()
-        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+        webfilters = get_active_endpoints(Webfilter, event)
 
         if webfilters:
             logger.info(f"Webfilter for {event} event.")
@@ -2171,7 +2172,7 @@ class ScheduleQuerySetRequestedWebFilter(PipelineStep):
 
         return_data = data.copy()
 
-        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+        webfilters = get_active_endpoints(Webfilter, event)
 
         if webfilters:
             logger.info(f"Webfilter for {event} event.")
@@ -2213,7 +2214,7 @@ class LMSPageURLRequestedWebFilter(PipelineStep):
 
         return_data = data.copy()
 
-        webfilters = Webfilter.objects.filter(enabled=True, event=event)
+        webfilters = get_active_endpoints(Webfilter, event)
 
         if webfilters:
             logger.info(f"Webfilter for {event} event.")
@@ -2232,7 +2233,7 @@ class InstructorDashboardTabsRequestedWebFilter(PipelineStep):
 
     def run_filter(self, tabs, user, course_key):  # pylint: disable=arguments-differ
         """Accept a replacement tabs list or PreventTabsGeneration exception."""
-        webfilters = Webfilter.objects.filter(enabled=True, event='InstructorDashboardTabsRequested')
+        webfilters = get_active_endpoints(Webfilter, 'InstructorDashboardTabsRequested')
         if not webfilters:
             return {}
         content, exceptions = _process_filter(
@@ -2251,7 +2252,7 @@ class AccountSettingsReadOnlyFieldsRequestedWebFilter(PipelineStep):
 
     def run_filter(self, readonly_fields, user):  # pylint: disable=arguments-differ
         """Convert returned JSON field names into the set required by the account API."""
-        webfilters = Webfilter.objects.filter(enabled=True, event='AccountSettingsReadOnlyFieldsRequested')
+        webfilters = get_active_endpoints(Webfilter, 'AccountSettingsReadOnlyFieldsRequested')
         if not webfilters:
             return {}
         content, _ = _process_filter(webfilters, {'readonly_fields': sorted(readonly_fields), 'user': user})
@@ -2266,7 +2267,7 @@ class GradeEventContextRequestedWebFilter(PipelineStep):
 
     def run_filter(self, context, user_id, course_id):  # pylint: disable=arguments-differ
         """Merge additional context from configured endpoints."""
-        webfilters = Webfilter.objects.filter(enabled=True, event='GradeEventContextRequested')
+        webfilters = get_active_endpoints(Webfilter, 'GradeEventContextRequested')
         if not webfilters:
             return {}
         content, _ = _process_filter(webfilters, {'context': context, 'user_id': user_id, 'course_id': course_id})

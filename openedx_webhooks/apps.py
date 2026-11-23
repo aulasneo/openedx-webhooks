@@ -91,6 +91,10 @@ class WebhooksConfig(AppConfig):
 
     name = 'openedx_webhooks'
 
+    def ready(self):
+        """Register configuration cache invalidation and request lifecycle receivers."""
+        from . import lookups  # pylint: disable=import-outside-toplevel,unused-import
+
     receivers = []
     for signal_app, signal_list in signals.items():
         for signal in signal_list:
