@@ -34,10 +34,13 @@ def upstream_filters():
 
 
 @pytest.mark.django_db
-def test_all_upstream_filters_are_registered_and_noop_through_real_pipeline(settings):
+@pytest.mark.parametrize('inactive', [False, True])
+def test_all_upstream_filters_are_registered_and_noop_through_real_pipeline(settings, inactive, monkeypatch):
     """Every public filter has a loadable step that preserves inputs without endpoints."""
     settings.OPEN_EDX_FILTERS_CONFIG = {}
     plugin_settings(settings)
+    send = Mock()
+    monkeypatch.setattr(handlers, 'send', send)
     upstream = upstream_filters()
     assert set(upstream) == set(settings.OPEN_EDX_FILTERS_CONFIG)
     choices = dict(Webfilter._meta.get_field('event').choices)
@@ -45,6 +48,8 @@ def test_all_upstream_filters_are_registered_and_noop_through_real_pipeline(sett
         handler = import_string(config['pipeline'][0])
         event = handler.__name__.removesuffix('WebFilter')
         assert event in choices
+        if inactive:
+            Webfilter.objects.create(event=event, webhook_url='https://example.com/inactive', enabled=False)
         parameters = inspect.signature(upstream[filter_type].run_filter).parameters
         inputs = {name: None for name in parameters}
         inspect.signature(handler.run_filter).bind(None, **inputs)
@@ -52,6 +57,7 @@ def test_all_upstream_filters_are_registered_and_noop_through_real_pipeline(sett
         assert step.run_filter(**inputs) == {}
         # The runner must retain the original inputs when our step has nothing to do.
         assert upstream[filter_type].run_pipeline(**inputs) == inputs
+    send.assert_not_called()
 
 
 @pytest.mark.parametrize('domain', signals)
