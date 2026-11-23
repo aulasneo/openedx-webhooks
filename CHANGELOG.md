@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## Version 22.1.1 (2026-11-23)
 
 - Cache enabled webhook and webfilter configuration lookups per event, including
   empty results, to reduce repeated database queries. Reuse lookups within HTTP
