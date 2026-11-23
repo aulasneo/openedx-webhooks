@@ -68,6 +68,21 @@ webhook to define the URLs that will be called after each event is received.
 More than one URL can be configured for each event. In that case, all URLs are
 called.
 
+### Configuration Cache
+
+Enabled webhook and webfilter configurations, including empty results, are
+cached per event in Django's default cache for up to 24 hours. HTTP requests
+also reuse each lookup for the duration of the request. Saving or deleting a
+configuration in Django admin invalidates the shared cache after the database
+transaction commits. An in-progress request may continue using its earlier
+lookup until it finishes.
+
+Use a shared default cache across LMS, Studio, and workers for changes to be
+visible across processes immediately. Tutor's standard configuration uses
+Redis for this cache. With a process-local cache, other processes can retain
+old configurations until their entries expire. Database updates that bypass
+Django's save and delete signals also rely on expiry.
+
 ### Configuring Webhooks
 
 The `Webhooks` Django admin panel has the following settings:

@@ -10,7 +10,8 @@ from django.db import connections, router, transaction
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
-_TTL = 60
+# Admin saves and deletes invalidate on commit. Expiry is a fallback.
+_TTL = 24 * 60 * 60
 _PREFIX = 'openedx_webhooks.active.v1'
 _request_entries = ContextVar('openedx_webhooks_request_entries', default=None)
 
