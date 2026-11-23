@@ -81,7 +81,9 @@ Use a shared default cache across LMS, Studio, and workers for changes to be
 visible across processes immediately. Tutor's standard configuration uses
 Redis for this cache. With a process-local cache, other processes can retain
 old configurations until their entries expire. Database updates that bypass
-Django's save and delete signals also rely on expiry.
+Django's save and delete signals also rely on expiry. If cache invalidation
+fails, an old shared entry can remain until it expires after the cache recovers.
+Cache lookup failures fall back to the database.
 
 ### Configuring Webhooks
 
