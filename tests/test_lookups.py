@@ -87,6 +87,8 @@ class ConfigurationChangeTests(TransactionTestCase):
             with transaction.atomic():
                 Webfilter.objects.create(event=EVENT, webhook_url=URL)
                 self.assertTrue(get_active_endpoints(Webfilter, EVENT))
+                with self.assertNumQueries(0):
+                    self.assertTrue(get_active_endpoints(Webfilter, EVENT))
                 transaction.set_rollback(True)
             self.assertFalse(get_active_endpoints(Webfilter, EVENT))
         self.assertFalse(get_active_endpoints(Webfilter, EVENT))
