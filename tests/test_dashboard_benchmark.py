@@ -16,15 +16,17 @@ from openedx_webhooks import filters
 @pytest.mark.django_db(transaction=True)
 def test_dashboard_lookup_benchmark():
     """Print median elapsed milliseconds and query counts over seven independent requests."""
+    keys = [f'course-v1:org+course+{i}' for i in range(50)]
     cases = (
-        (filters.CourseAboutPageURLRequestedWebFilter, {'url': '/about'}),
-        (filters.CourseHomeUrlCreationStartedWebFilter, {'course_home_url': '/home'}),
-        (filters.CourseRunAPIRenderStartedWebFilter, {'serialized_courserun': {}}),
-        (filters.CourseEnrollmentAPIRenderStartedWebFilter, {'serialized_enrollment': {}}),
+        (filters.CourseAboutPageURLRequestedWebFilter, [{'url': f'/{key}/about', 'org': 'org'} for key in keys]),
+        (filters.CourseHomeUrlCreationStartedWebFilter,
+         [{'course_key': key, 'course_home_url': '/home'} for key in keys]),
+        (filters.CourseRunAPIRenderStartedWebFilter, [{'serialized_courserun': {'key': key}} for key in keys]),
+        (filters.CourseEnrollmentAPIRenderStartedWebFilter,
+         [{'course_key': key, 'serialized_enrollment': {}} for key in keys]),
     )
-    for handler, data in cases:
+    for handler, inputs in cases:
         step = handler('', [])
-        inputs = [dict(data, course_key=f'course-v1:org+course+{i}') for i in range(50)]
         for warm in (False, True):
             times = []
             counts = []
